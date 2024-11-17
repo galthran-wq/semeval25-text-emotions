@@ -1,0 +1,102 @@
+{
+    "f1_macro_macro": 0.3652,
+    "f1_micro_macro": 0.5219,
+    "f1_macro_micro": 0.3652,
+    "f1_micro_micro": 0.5219,
+    "by_language": {
+        "eng": {
+            "accuracy": 0.2238,
+            "f1_macro": 0.3652,
+            "precision_macro": 0.653,
+            "recall_macro": 0.3215,
+            "f1_micro": 0.5219,
+            "precision_micro": 0.6242,
+            "recall_micro": 0.4484,
+            "n": 554
+        }
+    },
+    "by_label": {
+        "disgust": {
+            "accuracy": NaN,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "n": 0
+        },
+        "anger": {
+            "accuracy": 0.8953,
+            "f1": 0.1212,
+            "precision": 0.8,
+            "recall": 0.0656,
+            "n": 554
+        },
+        "fear": {
+            "accuracy": 0.6245,
+            "f1": 0.7166,
+            "precision": 0.6262,
+            "recall": 0.8376,
+            "n": 554
+        },
+        "joy": {
+            "accuracy": 0.7635,
+            "f1": 0.2428,
+            "precision": 0.5385,
+            "recall": 0.1567,
+            "n": 554
+        },
+        "sadness": {
+            "accuracy": 0.722,
+            "f1": 0.287,
+            "precision": 0.6889,
+            "recall": 0.1813,
+            "n": 554
+        },
+        "surprise": {
+            "accuracy": 0.731,
+            "f1": 0.4582,
+            "precision": 0.6117,
+            "recall": 0.3663,
+            "n": 554
+        }
+    },
+    "by_language_by_label": {
+        "eng": {
+            "disgust": {
+                "accuracy": NaN,
+                "f1": 0.0,
+                "precision": 0.0,
+                "recall": 0.0
+            },
+            "anger": {
+                "accuracy": 0.8953,
+                "f1": 0.1212,
+                "precision": 0.8,
+                "recall": 0.0656
+            },
+            "fear": {
+                "accuracy": 0.6245,
+                "f1": 0.7166,
+                "precision": 0.6262,
+                "recall": 0.8376
+            },
+            "joy": {
+                "accuracy": 0.7635,
+                "f1": 0.2428,
+                "precision": 0.5385,
+                "recall": 0.1567
+            },
+            "sadness": {
+                "accuracy": 0.722,
+                "f1": 0.287,
+                "precision": 0.6889,
+                "recall": 0.1813
+            },
+            "surprise": {
+                "accuracy": 0.731,
+                "f1": 0.4582,
+                "precision": 0.6117,
+                "recall": 0.3663
+            }
+        }
+    }
+}
