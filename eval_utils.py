@@ -1,4 +1,4 @@
-from typing import Dict, Literal
+from typing import Dict, Literal, List
 
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
@@ -10,13 +10,22 @@ LABELS = ["disgust", "anger", "fear", "joy", "sadness", "surprise"]
 def _get_language_from_id(id: str) -> str:
     return id.split("_")[0]
 
-def compute_metrics(predictions: Dict[str, Dict[str, int]], labels: Dict[str, Dict[str, float]] = None, split: Literal["validation", "train"] = "validation") -> Dict[str, float]:
+def compute_metrics(
+    predictions: Dict[str, Dict[str, int]], 
+    split: Literal["validation", "train"] = "validation",
+    languages: List[str] = None
+) -> Dict[str, float]:
     """
     predictions: { $id: { $label: $prediction } }
     """
     dataset = load_dataset(track="a", format="pandas")[split]
     # { $id: { $label: $prediction } }
     dataset_labels_entries = dataset[["id", *LABELS]].set_index("id").to_dict(orient="index")
+    if languages is not None:
+        dataset_labels_entries = {
+            id: entries for id, entries in dataset_labels_entries.items() 
+            if _get_language_from_id(id) in languages
+        }
     all_languages = list(set([_get_language_from_id(id) for id in dataset_labels_entries.keys()]))
     
     # Validate predictions, assert that all ids are the same
