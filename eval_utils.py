@@ -1,6 +1,7 @@
 from typing import Dict, Literal
 
-from sklearn.metrics import accuracy_score, f1_score
+import numpy as np
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 from data_utils import load_dataset
 
@@ -21,20 +22,7 @@ def compute_metrics(predictions: Dict[str, Dict[str, int]], labels: Dict[str, Di
     # Validate predictions, assert that all ids are the same
     assert set(predictions.keys()) == set(dataset_labels_entries.keys())
 
-    # Calculate overall metrics
-    y_true = []
-    y_pred = []
-    for id in predictions.keys():
-        for label in LABELS:
-            # not all the data has all the labels
-            if label in dataset_labels_entries[id] and dataset_labels_entries[id][label] is not None:
-                y_true.append(dataset_labels_entries[id][label])
-                y_pred.append(predictions[id][label])
-
-    accuracy = accuracy_score(y_true, y_pred)
-    f1_macro = f1_score(y_true, y_pred, average='macro')
-    f1_micro = f1_score(y_true, y_pred, average='micro')
-
+    # Calculate metrics by label
     # Calculate metrics by language
     by_language = {}
     for language in all_languages:
@@ -42,33 +30,46 @@ def compute_metrics(predictions: Dict[str, Dict[str, int]], labels: Dict[str, Di
         lang_y_pred = []
         for id, entries in dataset_labels_entries.items():
             if _get_language_from_id(id) == language:
-                for label in LABELS:
-                    if label in entries and entries[label] is not None:
-                        lang_y_true.append(entries[label])
-                        lang_y_pred.append(predictions[id][label])
+                true_labels = [entries[label] for label in LABELS if label in entries and entries[label] is not None]
+                pred_labels = [predictions[id][label] for label in LABELS if label in entries and entries[label] is not None]
+                lang_y_true.append(true_labels)
+                lang_y_pred.append(pred_labels)
+        lang_y_true = np.array(lang_y_true)
+        lang_y_pred = np.array(lang_y_pred)
         by_language[language] = {
-            "accuracy": accuracy_score(lang_y_true, lang_y_pred),
-            "f1_macro": f1_score(lang_y_true, lang_y_pred, average='macro'),
-            "f1_micro": f1_score(lang_y_true, lang_y_pred, average='micro')
+            "accuracy": round(accuracy_score(lang_y_true, lang_y_pred), 4),
+            "f1_macro": round(f1_score(lang_y_true, lang_y_pred, average='macro'), 4),
+            "precision_macro": round(precision_score(lang_y_true, lang_y_pred, average='macro'), 4),
+            "recall_macro": round(recall_score(lang_y_true, lang_y_pred, average='macro'), 4),
+            "f1_micro": round(f1_score(lang_y_true, lang_y_pred, average='micro'), 4),
+            "precision_micro": round(precision_score(lang_y_true, lang_y_pred, average='micro'), 4),
+            "recall_micro": round(recall_score(lang_y_true, lang_y_pred, average='micro'), 4),
+            "n": len(lang_y_true)
         }
+
+    # Compute macro and micro F1 from by_language
+    f1_macro_macro = round(np.mean([metrics["f1_macro"] for metrics in by_language.values()]), 4)
+    f1_micro_macro = round(np.average([metrics["f1_micro"] for metrics in by_language.values()], weights=[metrics["n"] for metrics in by_language.values()]), 4)
+    f1_macro_micro = round(np.mean([metrics["f1_macro"] for metrics in by_language.values()]), 4)
+    f1_micro_micro = round(np.average([metrics["f1_micro"] for metrics in by_language.values()], weights=[metrics["n"] for metrics in by_language.values()]), 4)
 
     # Calculate metrics by label
     by_label = {}
     for label in LABELS:
-        label_y_true = [
-            dataset_labels_entries[id][label] 
-            for id in predictions.keys() 
-            if label in dataset_labels_entries[id] and dataset_labels_entries[id][label] is not None
-        ]
-        label_y_pred = [
-            predictions[id][label] 
-            for id in predictions.keys() 
-            if label in dataset_labels_entries[id] and dataset_labels_entries[id][label] is not None
-        ]
+        label_y_true = []
+        label_y_pred = []
+        for id, entries in dataset_labels_entries.items():
+            if label in entries and entries[label] is not None:
+                true_labels = entries[label]
+                pred_labels = predictions[id][label]
+                label_y_true.append(true_labels)
+                label_y_pred.append(pred_labels)
         by_label[label] = {
-            "accuracy": accuracy_score(label_y_true, label_y_pred),
-            "f1_macro": f1_score(label_y_true, label_y_pred, average='macro'),
-            "f1_micro": f1_score(label_y_true, label_y_pred, average='micro')
+            "accuracy": round(accuracy_score(label_y_true, label_y_pred), 4),
+            "f1": round(f1_score(label_y_true, label_y_pred), 4),
+            "precision": round(precision_score(label_y_true, label_y_pred), 4),
+            "recall": round(recall_score(label_y_true, label_y_pred), 4),
+            "n": len(label_y_true)
         }
 
     # Calculate metrics by language and label
@@ -84,15 +85,17 @@ def compute_metrics(predictions: Dict[str, Dict[str, int]], labels: Dict[str, Di
                     lang_label_y_pred.append(predictions[id][label])
 
             by_language_by_label[language][label] = {
-                "accuracy": accuracy_score(lang_label_y_true, lang_label_y_pred),
-                "f1_macro": f1_score(lang_label_y_true, lang_label_y_pred, average='macro'),
-                "f1_micro": f1_score(lang_label_y_true, lang_label_y_pred, average='micro')
+                "accuracy": round(accuracy_score(lang_label_y_true, lang_label_y_pred), 4),
+                "f1": round(f1_score(lang_label_y_true, lang_label_y_pred), 4),
+                "precision": round(precision_score(lang_label_y_true, lang_label_y_pred), 4),
+                "recall": round(recall_score(lang_label_y_true, lang_label_y_pred), 4),
             }
 
     return {
-        "accuracy": accuracy,
-        "f1_macro": f1_macro,
-        "f1_micro": f1_micro,
+        "f1_macro_macro": f1_macro_macro,
+        "f1_micro_macro": f1_micro_macro,
+        "f1_macro_micro": f1_macro_micro,
+        "f1_micro_micro": f1_micro_micro,
         "by_language": by_language,
         "by_label": by_label,
         "by_language_by_label": by_language_by_label
