@@ -1,0 +1,4 @@
+datasets
+pandas
+catboost
+scipy==1.12
