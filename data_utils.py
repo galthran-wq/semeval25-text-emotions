@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 
 import pandas as pd
 
+LABELS = ["disgust", "anger", "fear", "joy", "sadness", "surprise"]
 
 def save_data_split(
     track: Literal["a", "b"], 
@@ -71,7 +72,7 @@ def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Li
         data.columns = data.columns.str.lower()
         data["language"] = language
         if track == "a":
-            for col in ["disgust", "anger", "fear", "joy", "sadness", "surprise"]:
+            for col in LABELS:
                 if col not in data.columns:
                     data[col] = None
                     
@@ -91,7 +92,7 @@ def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Li
         data.columns = data.columns.str.lower()
         data["language"] = language
         if track == "a":
-            for col in ["disgust", "anger", "fear", "joy", "sadness", "surprise"]:
+            for col in LABELS:
                 if col not in data.columns:
                     data[col] = None
         dev_data.append(data)
