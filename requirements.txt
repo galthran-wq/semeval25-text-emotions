@@ -2,7 +2,7 @@ datasets
 pandas
 catboost
 scipy==1.12
-transformers==4.46.2
+transformers==4.42.2
 pydantic==2.9.2
 accelerate==1.1.1
 torch==2.4.1
@@ -12,5 +12,9 @@ langchain-openai==0.2.9
 fire==0.7.0
 sentence-transformers==3.3.1
 langchain-community==0.3.7
-protobuf==5.28.3
 sentencepiece==0.2.0
+protobuf
+setfit==1.1.0
+unsloth==2024.10.7
+trl==0.11.1
+unsloth-zoo==2024.10.1
