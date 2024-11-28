@@ -8,8 +8,9 @@ from datetime import datetime
 import datasets
 from pydantic import BaseModel
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments, DebertaV2Tokenizer
 import yaml
+from sklearn.metrics import roc_auc_score
 
 from eval_utils import compute_metrics
 from data_utils import load_dataset, LABELS
@@ -70,7 +71,7 @@ def train_and_evaluate(config: Config):
     # Tokenize data
     def tokenize_function(examples):
         # Tokenize the text and return input_ids, attention_mask, and labels
-        tokenized_inputs = tokenizer(examples['text'], padding="max_length", truncation=True)
+        tokenized_inputs = tokenizer(examples['text'], padding="max_length", truncation=True, max_length=128)
         # Ensure labels are included in the tokenized output
         # Convert labels to float
         tokenized_inputs['labels'] = [list(map(float, label_set)) for label_set in zip(*[examples[label] for label in datasets_labels])]
@@ -84,21 +85,34 @@ def train_and_evaluate(config: Config):
         output_dir=get_output_dir(config) + f"/checkpoints",
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
-        save_strategy="no",
+        save_strategy="epoch",
+        evaluation_strategy="epoch",
         **config.training_params
     )
 
     def compute_metrics_wrapper(eval_pred):
         predictions, labels = eval_pred
-        predictions = torch.sigmoid(torch.tensor(predictions)) > 0
+        # Apply sigmoid to get probabilities
+        probabilities = torch.sigmoid(torch.tensor(predictions)).numpy()
+        # Binarize predictions using a threshold of 0.5
+        binary_predictions = probabilities > 0.5
+        
+        # Calculate AUC-ROC for each label
+        auc_roc = roc_auc_score(labels, probabilities, average='macro')
+        
         pred_dict = {
             val_ids[prediction_index]: {
-                label: int(predictions[prediction_index][i].item())
+                label: int(binary_predictions[prediction_index][i].item())
                 for i, label in enumerate(datasets_labels)
             } 
-            for prediction_index in range(len(predictions))
+            for prediction_index in range(len(binary_predictions))
         }
-        return compute_metrics(pred_dict, split="validation", languages=config.languages)
+        
+        # Compute other metrics
+        metrics = compute_metrics(pred_dict, split="validation", languages=config.languages)
+        metrics['auc_roc'] = auc_roc  # Add AUC-ROC to the metrics
+        
+        return metrics
 
     trainer = Trainer(
         model=model,
