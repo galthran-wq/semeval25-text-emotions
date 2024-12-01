@@ -20,6 +20,9 @@ class Config(BaseModel):
     checkpoint_path: str
     training_params: dict
     run_name: str
+    num_beams: int
+    repetition_penalty: float
+    no_repeat_ngram_size: int
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train and evaluate Seq2Seq model.")
@@ -62,6 +65,18 @@ def train_and_evaluate(config: Config):
     # Load tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained(config.checkpoint_path)
     model = AutoModelForSeq2SeqLM.from_pretrained(config.checkpoint_path)
+    
+    # Modify model generation config to include early stopping, num beams, and repetition penalty
+    model.config.early_stopping = True
+    model.config.num_beams = config.num_beams
+    model.config.repetition_penalty = config.repetition_penalty
+    model.config.no_repeat_ngram_size = config.no_repeat_ngram_size
+    # Set eos_token_id and pad_token_id if not already set
+    if model.config.eos_token_id is None:
+        model.config.eos_token_id = tokenizer.eos_token_id
+    if model.config.pad_token_id is None:
+        model.config.pad_token_id = tokenizer.pad_token_id
+
 
     # Tokenize data
     def tokenize_function(examples):
@@ -84,29 +99,41 @@ def train_and_evaluate(config: Config):
         metric_for_best_model="eval_loss",
         save_strategy="epoch",
         evaluation_strategy="epoch",
+        predict_with_generate=True,
         **config.training_params
     )
 
     def compute_metrics_wrapper(eval_pred):
         predictions, labels = eval_pred
         decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
-        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
         
         # Convert decoded strings back to JSON and compute metrics
         invalid_json_count = 0
         pred_dict = {}
         for val_id, pred in zip(val_ids, decoded_preds):
-            try:
-                pred_dict[val_id] = json.loads(pred)
-            except json.JSONDecodeError:
-                invalid_json_count += 1
-                pred_dict[val_id] = {label: 0 for label in datasets_labels}
-        
-        label_dict = {val_id: json.loads(label) for val_id, label in zip(val_ids, decoded_labels)}
+            pred = pred.replace(" and", ",") # weird format from the model
+            for i in range(len(pred)):
+                try:
+                    prediction = json.loads(pred[:len(pred)-i])
+                    for key in copy(list(prediction.keys())):
+                        if key not in datasets_labels:
+                            del prediction[key]
+                    for label in datasets_labels:
+                        asigned_value = prediction.get(label, 0)
+                        if not isinstance(asigned_value, int):
+                            asigned_value = 0
+                        elif asigned_value > 1:
+                            asigned_value = 1
+                        prediction[label] = asigned_value
+                    pred_dict[val_id] = prediction
+                    break
+                except json.JSONDecodeError:
+                    if i == len(pred) - 1:
+                        invalid_json_count += 1
+                        pred_dict[val_id] = {label: 0 for label in datasets_labels}
         
         print(f"Number of invalid JSONs: {invalid_json_count}")
-        
-        metrics = compute_metrics(pred_dict, label_dict, split="validation", languages=config.languages)
+        metrics = compute_metrics(predictions=pred_dict, split="validation", languages=config.languages)
         return metrics
 
     trainer = Seq2SeqTrainer(
