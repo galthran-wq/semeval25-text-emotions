@@ -115,7 +115,9 @@ def train_and_evaluate(config: Config):
             for i in range(len(pred)):
                 try:
                     prediction = json.loads(pred[:len(pred)-i])
-                    for key in copy(list(prediction.keys())):
+                    if not isinstance(prediction, dict):
+                        raise json.JSONDecodeError("Invalid JSON")
+                    for key in copy.copy(list(prediction.keys())):
                         if key not in datasets_labels:
                             del prediction[key]
                     for label in datasets_labels:
