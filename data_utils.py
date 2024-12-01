@@ -51,7 +51,7 @@ def save_data_split(
     return data
 
 
-def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Literal["pandas", "datasets"] = "pandas") -> Union[Dict[str, pd.DataFrame], datasets.DatasetDict]:
+def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Literal["pandas", "datasets"] = "pandas", languages=None) -> Union[Dict[str, pd.DataFrame], datasets.DatasetDict]:
     data_root = Path(data_root)
     train_data_root = data_root / "train" / f"track_{track}"
     dev_data_root = data_root / "dev" / f"track_{track}"
@@ -68,6 +68,8 @@ def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Li
     val_data = []
     for language_data_file in train_data_root.glob("*.csv"):
         language = language_data_file.stem
+        if languages is not None and language not in languages:
+            continue
         data = pd.read_csv(language_data_file)
         data.columns = data.columns.str.lower()
         data["language"] = language
@@ -88,6 +90,8 @@ def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Li
     dev_data = []
     for language_data_file in dev_data_root.glob("*.csv"):
         language = language_data_file.stem.split("_")[0]
+        if languages is not None and language not in languages:
+            continue
         data = pd.read_csv(language_data_file)
         data.columns = data.columns.str.lower()
         data["language"] = language
