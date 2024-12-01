@@ -1,0 +1,12 @@
+track: "a"
+languages:
+  - "eng"
+checkpoint_path: "facebook/bart-large-cnn"
+run_name: "bart-large-cnn-eng"
+training_params:
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 4
+  eval_accumulation_steps: 10
+  num_train_epochs: 5
+  logging_dir: "./logs"
+  logging_steps: 10

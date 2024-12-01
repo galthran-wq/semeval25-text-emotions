@@ -1,0 +1,11 @@
+track: "a"
+languages:
+  - "eng"
+checkpoint_path: "microsoft/deberta-v3-large"
+run_name: "deberta-v3-large-eng"
+training_params:
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  num_train_epochs: 5
+  logging_dir: "./logs"
+  logging_steps: 10

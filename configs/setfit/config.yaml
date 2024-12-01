@@ -1,0 +1,13 @@
+track: "a"
+languages:
+  - "eng"
+checkpoint_path: "BAAI/bge-m3"
+run_name: "bge-m3-eng_multi-output_100k"
+training_params:
+  batch_size: 8
+  max_steps: 100000
+  logging_dir: "./logs"
+  logging_steps: 100
+  eval_max_steps: 2000
+multi_target_strategy: "multi-output"
+use_differentiable_head: false
