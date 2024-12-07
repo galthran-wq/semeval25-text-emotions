@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 LABELS = ["disgust", "anger", "fear", "joy", "sadness", "surprise"]
+LANGUAGES = ["eng", "amh", "deu", "oro", "ptbr", "rus", "som", "sun", "tir"]
 
 def save_data_split(
     track: Literal["a", "b"], 
@@ -51,7 +52,12 @@ def save_data_split(
     return data
 
 
-def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Literal["pandas", "datasets"] = "pandas", languages=None) -> Union[Dict[str, pd.DataFrame], datasets.DatasetDict]:
+def load_dataset(
+    track: Literal["a", "b"], 
+    data_root="./public_data", 
+    format: Literal["pandas", "datasets"] = "pandas", 
+    languages=None
+) -> Union[Dict[str, pd.DataFrame], datasets.DatasetDict]:
     data_root = Path(data_root)
     train_data_root = data_root / "train" / f"track_{track}"
     dev_data_root = data_root / "dev" / f"track_{track}"
@@ -110,4 +116,14 @@ def load_dataset(track: Literal["a", "b"], data_root="./public_data", format: Li
     data = {"train": train_data, "validation": val_data, "dev": dev_data}
     if format == "datasets":
         data = datasets.DatasetDict(data)
+    return data
+
+
+def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: Literal["train", "validation", "dev", "train_full"] = "validation") -> pd.DataFrame:
+    data = load_dataset(track=track, data_root=data_root, format="pandas")
+    if split == "train_full":
+        data = pd.concat([data["train"], data["validation"]])
+    else:
+        data = data[split]
+    data = data[data["language"] == language]
     return data
