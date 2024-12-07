@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Optional
+from typing import Optional, Literal
 import pandas as pd
 from typing import List
 import tqdm
@@ -84,9 +84,12 @@ Do not give explanations. Just return the JSON object.
     return chain
 
 
-def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: str = "validation") -> pd.DataFrame:
+def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: Literal["train", "validation", "dev", "train_full"] = "validation") -> pd.DataFrame:
     data = load_dataset(track=track, data_root=data_root, format="pandas")
-    data = data[split]
+    if split == "train_full":
+        data = pd.concat([data["train"], data["validation"]])
+    else:
+        data = data[split]
     data = data[data["language"] == language]
     return data
 
