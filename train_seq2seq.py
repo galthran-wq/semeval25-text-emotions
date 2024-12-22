@@ -80,12 +80,12 @@ def train_and_evaluate(config: Config):
 
     # Tokenize data
     def tokenize_function(examples):
-        # Convert labels to JSON string
-        labels_json = [json.dumps({label: int(examples[label][i]) for label in datasets_labels}) for i in range(len(examples['text']))]
+        # Convert labels to a comma-separated string of label names where the value is 1
+        labels_str = [",".join([label for label in datasets_labels if examples[label][i] == 1]) for i in range(len(examples['text']))]
         # Tokenize the text and labels
         model_inputs = tokenizer(examples['text'], padding="max_length", truncation=True, max_length=128)
         with tokenizer.as_target_tokenizer():
-            labels = tokenizer(labels_json, padding="max_length", truncation=True, max_length=128)
+            labels = tokenizer(labels_str, padding="max_length", truncation=True, max_length=128)
         model_inputs['labels'] = labels['input_ids']
         return model_inputs
 
@@ -107,34 +107,20 @@ def train_and_evaluate(config: Config):
         predictions, labels = eval_pred
         decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
         
-        # Convert decoded strings back to JSON and compute metrics
-        invalid_json_count = 0
+        # Convert decoded strings back to a list and compute metrics
+        invalid_format_count = 0
         pred_dict = {}
         for val_id, pred in zip(val_ids, decoded_preds):
             pred = pred.replace(" and", ",") # weird format from the model
-            for i in range(len(pred)):
-                try:
-                    prediction = json.loads(pred[:len(pred)-i])
-                    if not isinstance(prediction, dict):
-                        raise json.JSONDecodeError("Invalid JSON")
-                    for key in copy.copy(list(prediction.keys())):
-                        if key not in datasets_labels:
-                            del prediction[key]
-                    for label in datasets_labels:
-                        asigned_value = prediction.get(label, 0)
-                        if not isinstance(asigned_value, int):
-                            asigned_value = 0
-                        elif asigned_value > 1:
-                            asigned_value = 1
-                        prediction[label] = asigned_value
-                    pred_dict[val_id] = prediction
-                    break
-                except json.JSONDecodeError:
-                    if i == len(pred) - 1:
-                        invalid_json_count += 1
-                        pred_dict[val_id] = {label: 0 for label in datasets_labels}
+            try:
+                # Split the prediction string into a list of label names
+                predicted_labels = [label.strip() for label in pred.split(",") if label.strip() in datasets_labels]
+                pred_dict[val_id] = {label: 1 if label in predicted_labels else 0 for label in datasets_labels}
+            except Exception as e:
+                invalid_format_count += 1
+                pred_dict[val_id] = {label: 0 for label in datasets_labels}
         
-        print(f"Number of invalid JSONs: {invalid_json_count}")
+        print(f"Number of invalid formats: {invalid_format_count}")
         metrics = compute_metrics(predictions=pred_dict, split="validation", languages=config.languages)
         return metrics
 
