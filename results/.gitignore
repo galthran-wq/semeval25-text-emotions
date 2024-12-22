@@ -1,3 +1,6 @@
 # Ignore all pickle files
 **/*.pickle
 !**/*.json
+**/best_checkpoint
+**/checkpoints
+**/*_predictions.json
