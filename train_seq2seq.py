@@ -67,10 +67,12 @@ def train_and_evaluate(config: Config):
     model = AutoModelForSeq2SeqLM.from_pretrained(config.checkpoint_path)
     
     # Modify model generation config to include early stopping, num beams, and repetition penalty
-    model.config.early_stopping = True
+    model.config.early_stopping = False
     model.config.num_beams = config.num_beams
-    model.config.repetition_penalty = config.repetition_penalty
-    model.config.no_repeat_ngram_size = config.no_repeat_ngram_size
+    # model.config.repetition_penalty = config.repetition_penalty
+    # model.config.no_repeat_ngram_size = config.no_repeat_ngram_size
+    model.config.length_penalty = None
+    model.config.max_length = 32
     # Set eos_token_id and pad_token_id if not already set
     if model.config.eos_token_id is None:
         model.config.eos_token_id = tokenizer.eos_token_id

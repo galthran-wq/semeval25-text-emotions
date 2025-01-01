@@ -10,9 +10,10 @@ LABELS = ["disgust", "anger", "fear", "joy", "sadness", "surprise"]
 def _get_language_from_id(id: str) -> str:
     return id.split("_")[0]
 
+
 def compute_metrics(
     predictions: Dict[str, Dict[str, int]], 
-    split: Literal["validation", "train"] = "validation",
+    split: Literal["validation", "train", "dev"] = "validation",
     languages: List[str] = None
 ) -> Dict[str, float]:
     """

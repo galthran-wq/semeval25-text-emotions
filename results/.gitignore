@@ -3,4 +3,5 @@
 !**/*.json
 **/best_checkpoint
 **/checkpoints
+**/*_best_model
 **/*_predictions.json
