@@ -84,16 +84,6 @@ Do not give explanations. Just return the JSON object.
     return chain
 
 
-def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: Literal["train", "validation", "dev", "train_full"] = "validation") -> pd.DataFrame:
-    data = load_dataset(track=track, data_root=data_root, format="pandas")
-    if split == "train_full":
-        data = pd.concat([data["train"], data["validation"]])
-    else:
-        data = data[split]
-    data = data[data["language"] == language]
-    return data
-
-
 def get_bge_retriever(data: pd.DataFrame, model_name: str, device: str = "cpu", n_examples: int = 5, mrr: bool = False):
     data: List[Document] = [
         Document(
@@ -171,10 +161,11 @@ def fewshot(
     device: str = "cpu",
     num_examples: int = 100,
     use_mmr: bool = False,
-    num_workers: int = 7
+    num_workers: int = 7,
+    split: Literal["train", "validation", "dev"] = "dev",
 ):
     # Load the training data
-    train_data = load_data_for_language(language=language, data_root=data_root, split="train")
+    train_data = load_data_for_language(language=language, data_root=data_root, split="train_full" if split == "dev" else "train")
 
     # Initialize the BGE embedding model
     retriever = get_bge_retriever(train_data, model_name, device, num_examples, use_mmr)
@@ -182,8 +173,9 @@ def fewshot(
     chain = get_fewshot_chain(retriever)
 
     os.makedirs(predictions_dir, exist_ok=True)
-    predictions_file = os.path.join(predictions_dir, f"{language}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_predictions.json")
-    
+    predictions_file = os.path.join(predictions_dir, f"{language}_{split}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_predictions.json")
+
+    print(f"Loading existing predictions from {predictions_file}")
     # Load existing predictions if they exist
     if os.path.exists(predictions_file):
         with open(predictions_file, "r") as f:
@@ -191,7 +183,7 @@ def fewshot(
     else:
         predictions = {}
 
-    data = load_data_for_language(language=language, data_root=data_root, split="validation")
+    data = load_data_for_language(language=language, data_root=data_root, split=split)
     texts_to_predict = []
     ids_to_predict = []
 
@@ -211,8 +203,8 @@ def fewshot(
         with open(predictions_file, "w") as f:
             json.dump(predictions, f)
     
-    metrics = compute_metrics(predictions, languages=[language])
-    with open(os.path.join(predictions_dir, f"{language}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_metrics.json"), "w") as f:
+    metrics = compute_metrics(predictions, languages=[language], split=split)
+    with open(os.path.join(predictions_dir, f"{language}_{split}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_metrics.json"), "w") as f:
         json.dump(metrics, f)
 
     return chain
@@ -241,10 +233,11 @@ def zeroshot(
     language: str = "eng",
     data_root: str = "./public_data",
     predictions_dir: str = "results/gpt/zeroshot",
-    num_workers: int = 7
+    num_workers: int = 7,
+    split: str = "validation",
 ):
     os.makedirs(predictions_dir, exist_ok=True)
-    predictions_file = os.path.join(predictions_dir, f"{language}_predictions.json")
+    predictions_file = os.path.join(predictions_dir, f"{language}_{split}_predictions.json")
     
     # Load existing predictions if they exist
     if os.path.exists(predictions_file):
@@ -253,7 +246,7 @@ def zeroshot(
     else:
         predictions = {}
 
-    data = load_data_for_language(track, language, data_root)
+    data = load_data_for_language(track, language, data_root, split=split)
     texts_to_predict = []
     ids_to_predict = []
 
@@ -274,7 +267,7 @@ def zeroshot(
             json.dump(predictions, f)
     
     metrics = compute_metrics(predictions, languages=[language])
-    with open(os.path.join(predictions_dir, f"{language}_metrics.json"), "w") as f:
+    with open(os.path.join(predictions_dir, f"{language}_{split}_metrics.json"), "w") as f:
         json.dump(metrics, f)
 
 if __name__ == "__main__":
