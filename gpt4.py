@@ -9,7 +9,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pydantic import BaseModel
 from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_core.example_selectors.base import BaseExampleSelector
-from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import PydanticOutputParser
@@ -20,7 +19,14 @@ from eval_utils import compute_metrics
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import SKLearnVectorStore
 
-openai = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o")
+def setup_llm(model: str):
+    if model == "gpt-4o":
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o")
+    else:
+        from langchain_ollama import OllamaLLM
+        llm = OllamaLLM(model=model)
+    return llm
 
 
 class RetrieverExampleSelector(BaseExampleSelector):
@@ -55,7 +61,7 @@ class ClassificationResult(BaseModel):
     surprise: Optional[bool] = False
 
 
-def get_zeroshot_chain():
+def get_zeroshot_chain(llm):
     system = """
 You are an expert at detecting emotions in text.
 Please classify the text into one of the following categories:
@@ -78,7 +84,7 @@ Do not give explanations. Just return the JSON object.
     chain = (
         {"text": RunnablePassthrough()} |
         prompt |
-        openai |
+        llm |
         PydanticOutputParser(pydantic_object=ClassificationResult)
     )
     return chain
@@ -113,11 +119,10 @@ def get_bge_retriever(data: pd.DataFrame, model_name: str, device: str = "cpu", 
     return retriever
 
 
-def get_fewshot_chain(retriever):
+def get_fewshot_chain(retriever, llm):
     system = """
 You are an expert at detecting emotions in text.
-You are given examples of texts and their corresponding emotions.
-Please classify the new text into one of the following categories:
+Please classify the text into one of the following categories:
 Anger, Fear, Joy, Sadness, Surprise
 Your response should be a JSON object with the following format:
 {{
@@ -146,7 +151,7 @@ Do not give explanations. Just return the JSON object.
     chain = (
         {"text": RunnablePassthrough()} |
         prompt |
-        openai |
+        llm |
         PydanticOutputParser(pydantic_object=ClassificationResult)
     )
     return chain
@@ -154,6 +159,7 @@ Do not give explanations. Just return the JSON object.
 
 def fewshot(
     *,
+    model: str,
     language: str = "eng",
     data_root: str = "./public_data",
     predictions_dir: str = "results/gpt/fewshot",
@@ -164,13 +170,25 @@ def fewshot(
     num_workers: int = 7,
     split: Literal["train", "validation", "dev"] = "dev",
 ):
+    llm = setup_llm(model=model)
     # Load the training data
-    train_data = load_data_for_language(language=language, data_root=data_root, split="train_full" if split == "dev" else "train")
+    train_data = load_dataset(
+        track="a",
+        languages=[language], 
+        data_root=data_root, 
+        format="pandas"
+    )
+    if split == "dev":
+        # TODO: train + validation
+        train_split="train_full"
+    else:
+        train_split="train"
+    train_data = train_data[train_split]
 
     # Initialize the BGE embedding model
     retriever = get_bge_retriever(train_data, model_name, device, num_examples, use_mmr)
 
-    chain = get_fewshot_chain(retriever)
+    chain = get_fewshot_chain(retriever, llm)
 
     os.makedirs(predictions_dir, exist_ok=True)
     predictions_file = os.path.join(predictions_dir, f"{language}_{split}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_predictions.json")
@@ -183,7 +201,12 @@ def fewshot(
     else:
         predictions = {}
 
-    data = load_data_for_language(language=language, data_root=data_root, split=split)
+    data = load_dataset(
+        track="a",
+        languages=[language], 
+        data_root=data_root, 
+        format="pandas"
+    )[split]
     texts_to_predict = []
     ids_to_predict = []
 
@@ -195,7 +218,7 @@ def fewshot(
 
     # Run the chain only for entries that need predictions
     if texts_to_predict:
-        chain = get_fewshot_chain(retriever)
+        chain = get_fewshot_chain(retriever, llm)
         results = run_chain(chain=chain, texts=texts_to_predict, ids=ids_to_predict, num_workers=num_workers)
         predictions.update(results)
 
@@ -220,15 +243,25 @@ def run_chain(chain, texts, ids, num_workers: int = 7):
             print(f"Error processing text ID {id}: {e}")
             return id, None
 
-    with ThreadPoolExecutor(max_workers=num_workers) as executor:
-        future_to_id = {executor.submit(process_text, id, text): id for id, text in zip(ids, texts)}
-        for future in tqdm.tqdm(as_completed(future_to_id), total=len(future_to_id), desc="Processing texts"):
-            id, result = future.result()
+    if num_workers > 1:
+        with ThreadPoolExecutor(max_workers=num_workers) as executor:
+            future_to_id = {executor.submit(process_text, id, text): id for id, text in zip(ids, texts)}
+            for future in tqdm.tqdm(as_completed(future_to_id), total=len(future_to_id), desc="Processing texts"):
+                id, result = future.result()
+                if result is not None:
+                    results[id] = {label: result.model_dump()[label] for label in LABELS}
+    else:
+        for id, text in tqdm.tqdm(zip(ids, texts), desc="Processing texts sequentially:"):
+            id, result = process_text(id, text)
             if result is not None:
                 results[id] = {label: result.model_dump()[label] for label in LABELS}
+            else:
+                results[id] = {label: 0 for label in LABELS}
     return results
 
 def zeroshot(
+    *,
+    model: str,
     track: str = "a",
     language: str = "eng",
     data_root: str = "./public_data",
@@ -236,6 +269,7 @@ def zeroshot(
     num_workers: int = 7,
     split: str = "validation",
 ):
+    llm = setup_llm(model=model)
     os.makedirs(predictions_dir, exist_ok=True)
     predictions_file = os.path.join(predictions_dir, f"{language}_{split}_predictions.json")
     
@@ -246,7 +280,12 @@ def zeroshot(
     else:
         predictions = {}
 
-    data = load_data_for_language(track, language, data_root, split=split)
+    data = load_dataset(
+        track="a",
+        languages=[language], 
+        data_root=data_root, 
+        format="pandas"
+    )[split]
     texts_to_predict = []
     ids_to_predict = []
 
@@ -258,7 +297,7 @@ def zeroshot(
 
     # Run the chain only for entries that need predictions
     if texts_to_predict:
-        chain = get_zeroshot_chain()
+        chain = get_zeroshot_chain(llm)
         results = run_chain(chain, texts_to_predict, ids_to_predict, num_workers)
         predictions.update(results)
 
