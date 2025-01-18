@@ -14,7 +14,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import PydanticOutputParser
 import fire
 
-from data_utils import load_dataset, LABELS
+from data_utils import load_dataset, LABELS, LANGUAGES
 from eval_utils import compute_metrics
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import SKLearnVectorStore
@@ -226,7 +226,7 @@ def fewshot(
     num_examples: int = 100,
     use_mmr: bool = False,
     num_workers: int = 7,
-    split: Literal["train", "validation", "dev"] = "dev",
+    split: Literal["train", "validation", "dev", "test"] = "dev",
 ):
     llm = setup_llm(model=model)
     # Load the training data
@@ -239,6 +239,8 @@ def fewshot(
     if split == "dev":
         # TODO: train + validation
         train_split="train_full"
+    elif split == "test":
+        train_data = "train_full_with_dev"
     else:
         train_split="train"
     train_data = train_data[train_split]
@@ -366,6 +368,34 @@ def zeroshot(
     metrics = compute_metrics(predictions, languages=[language])
     with open(os.path.join(predictions_dir, f"{language}_{split}_metrics.json"), "w") as f:
         json.dump(metrics, f)
+
+
+def fewshot_all_languages(
+    *,
+    model: str,
+    data_root: str = "./public_data",
+    predictions_dir: str = "results/gpt/fewshot",
+    model_name: str = "BAAI/bge-m3",
+    device: str = "cpu",
+    num_examples: int = 100,
+    use_mmr: bool = False,
+    num_workers: int = 7,
+    split: Literal["train", "validation", "dev", "test"] = "dev",
+):
+    for language in tqdm.tqdm(LANGUAGES):
+        print(f"Processing language {language}...")
+        fewshot(
+            model=model,
+            data_root=data_root,
+            predictions_dir=predictions_dir,
+            model_name=model_name,
+            device=device,
+            num_examples=num_examples,
+            use_mmr=use_mmr,
+            num_workers=num_workers,
+            split=split
+        )
+
 
 if __name__ == "__main__":
     fire.Fire()
