@@ -119,18 +119,76 @@ def get_bge_retriever(data: pd.DataFrame, model_name: str, device: str = "cpu", 
     return retriever
 
 
-def get_fewshot_chain(retriever, llm):
-    system = """
-You are an expert at detecting emotions in text.
+def get_fewshot_chain(retriever, llm, language):
+    language_map = {
+        "rus": "Russian",
+        "eng": "English",
+        "afr": "Afrikaans",
+        "amh": "Amharic",
+        "ptbr": "Portuguese",
+        "zho": "Chinese",
+        "vmw": "Emakhuwa",
+        "eng": "English",
+        "deu": "German",
+        "hau": "Hausa",
+        "hin": "Hindi",
+        "ibo": "Igbo",
+        "ind": "Indonesian",
+        "xho": "isiXhosa",
+        "zul": "isiZulu",
+        "jav": "Javanese",
+        "kin": "Kinyarwanda",
+        "esp": "Spanish",
+        "mar": "Marathi",
+        "rabic": "Moroccan",
+        "Pidgin": "Nigerian",
+        "orm": "Oromo",
+        "ron": "Romanian",
+        "rus": "Russian",
+        "som": "Somali",
+        "sun": "Sundanese",
+        "swa": "Swahili",
+        "swe": "Swedish",
+        "tat": "Tatar",
+        "tir": "Tigrinya",
+        "ukr": "Ukrainian",
+        "yor": "Yoruba"
+    }
+    if False:
+        system = f"Ты -- эксперт по распознованию эмоций в тексте."
+        system += """
+Пожалуйста, классифицируй предоставленное предожение в несколько категорий, в зависимости от эмоций, представленных в тексте:
+Anger --  злость,
+Fear -- страх,
+Joy -- радость,
+Sadness -- грусть,
+Surprise -- неожиданность,
+Disgust -- отвращение.
+
+Твой ответ обязан соответствовать следующему формату JSON:
+{{
+    "anger": bool,
+    "fear": bool,
+    "joy": bool,
+    "sadness": bool,
+    "surprise": bool,
+    "disgust": bool
+}}
+Не давай пояснения своему ответу. Просто верни JSON объект.
+"""
+    else:
+        system = f"You are an expert at detecting emotions in text. The texts are given in {language_map[language]} language."
+        system += """
 Please classify the text into one of the following categories:
-Anger, Fear, Joy, Sadness, Surprise
+Anger, Fear, Joy, Sadness, Surprise, Disgust
 Your response should be a JSON object with the following format:
 {{
     "anger": bool,
     "fear": bool,
     "joy": bool,
     "sadness": bool,
-    "surprise": bool
+    "surprise": bool,
+    "disgust": bool
 }}
 Do not give explanations. Just return the JSON object.
 """
@@ -188,7 +246,7 @@ def fewshot(
     # Initialize the BGE embedding model
     retriever = get_bge_retriever(train_data, model_name, device, num_examples, use_mmr)
 
-    chain = get_fewshot_chain(retriever, llm)
+    chain = get_fewshot_chain(retriever, llm, language)
 
     os.makedirs(predictions_dir, exist_ok=True)
     predictions_file = os.path.join(predictions_dir, f"{language}_{split}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_predictions.json")
@@ -218,7 +276,7 @@ def fewshot(
 
     # Run the chain only for entries that need predictions
     if texts_to_predict:
-        chain = get_fewshot_chain(retriever, llm)
+        chain = get_fewshot_chain(retriever, llm, language)
         results = run_chain(chain=chain, texts=texts_to_predict, ids=ids_to_predict, num_workers=num_workers)
         predictions.update(results)
 
