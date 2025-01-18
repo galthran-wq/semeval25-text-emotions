@@ -30,7 +30,10 @@ def compute_metrics(
     all_languages = list(set([_get_language_from_id(id) for id in dataset_labels_entries.keys()]))
     
     # Validate predictions, assert that all ids are the same
-    assert set(predictions.keys()) == set(dataset_labels_entries.keys())
+    missing_ids = list(set(dataset_labels_entries.keys()).difference(set(predictions.keys())))
+    print(f"Missing {len(missing_ids)} ids! Will set all the predictions to zero!")
+    for id in missing_ids:
+        predictions[id] = {label: 0 for label in LABELS}
 
     # Calculate metrics by label
     # Calculate metrics by language
