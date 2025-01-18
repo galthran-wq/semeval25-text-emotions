@@ -119,10 +119,12 @@ def load_dataset(
     return data
 
 
-def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: Literal["train", "validation", "dev", "train_full"] = "validation") -> pd.DataFrame:
+def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: Literal["train", "validation", "dev", "train_full", "train_full_with_dev"] = "validation") -> pd.DataFrame:
     data = load_dataset(track=track, data_root=data_root, format="pandas")
     if split == "train_full":
         data = pd.concat([data["train"], data["validation"]])
+    elif split == "train_full_with_dev":
+        data = pd.concat([data["train"], data["validation"], data["dev"]])
     else:
         data = data[split]
     data = data[data["language"] == language]
