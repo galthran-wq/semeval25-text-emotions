@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Optional, Literal
+from typing import Optional, Literal, Dict
 import pandas as pd
 from typing import List
 import tqdm
@@ -11,7 +11,7 @@ from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTempla
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 import fire
 
 from data_utils import load_dataset, LABELS, LANGUAGES
@@ -210,10 +210,33 @@ Do not give explanations. Just return the JSON object.
         {"text": RunnablePassthrough()} |
         prompt |
         llm |
-        PydanticOutputParser(pydantic_object=ClassificationResult)
+        # PydanticOutputParser(pydantic_object=ClassificationResult)
+        StrOutputParser()
     )
     return chain
 
+def parse_results(results: Dict[str, str]):
+    parsed_results: Dict[str, Dict] = {}
+    for id, result in results.items():
+        try:
+            parsed_result = ClassificationResult.model_validate(json.loads(result))
+            parsed_results[id] = parsed_result.model_dump()
+        except Exception as e:
+            print(f"Failed to parse result: \"{result}\"... Trying to fix...")
+        # some models have probem generating vlaid jsons
+        lines = result.split("\n")
+        for line in lines:
+            line = line.strip()
+            if line.startswith("AI: "):
+                line = line[len("AI: "):].strip()
+                try:
+                    parsed_result = ClassificationResult.model_validate(json.loads(line))
+                    parsed_results[id] = parsed_result.model_dump()
+                    print(f"Successfully fixed to: {line}")
+                    break
+                except:
+                    print(f"Failed to fix as: {line}")
+    return parsed_results
 
 def fewshot(
     *,
@@ -280,6 +303,7 @@ def fewshot(
     if texts_to_predict:
         chain = get_fewshot_chain(retriever, llm, language)
         results = run_chain(chain=chain, texts=texts_to_predict, ids=ids_to_predict, num_workers=num_workers)
+        results = parse_results(results)
         predictions.update(results)
 
         # Save updated predictions
@@ -313,10 +337,11 @@ def run_chain(chain, texts, ids, num_workers: int = 7):
     else:
         for id, text in tqdm.tqdm(zip(ids, texts), desc="Processing texts sequentially:"):
             id, result = process_text(id, text)
-            if result is not None:
-                results[id] = {label: result.model_dump()[label] for label in LABELS}
-            else:
-                results[id] = {label: 0 for label in LABELS}
+            results[id] = result
+            # if result is not None:
+            #     results[id] = {label: result.model_dump()[label] for label in LABELS}
+            # else:
+            #     results[id] = None
     return results
 
 def zeroshot(
