@@ -8,7 +8,55 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 LABELS = ["disgust", "anger", "fear", "joy", "sadness", "surprise"]
-LANGUAGES = ["eng", "amh", "deu", "oro", "ptbr", "rus", "som", "sun", "tir"]
+LANGUAGES = [
+    "eng", 
+    "amh", 
+    "deu", 
+    "ptbr", 
+    "rus", 
+    "som", 
+    "sun", 
+    "tir",
+    "afr",
+    "arq",
+    "ary",
+    "chn",
+    "esp",
+    "hau",
+    "hin",
+    "ibo",
+    "kin",
+    "mar",
+    "orm",
+    "pcm",
+    "ptmz",
+    "ron",
+    "swa",
+    "swe",
+    "tat",
+    "ukr",
+    "vmw",
+    "yor",
+]
+LOW_RESOURCE_LANGUAGES = [
+    "afr",
+    "amh",
+    "vmw",
+    "hau",
+    "ibo",
+    "xho",
+    "zul",
+    "jav",
+    "kin",
+    "mar",
+    "pcm",
+    "orm",
+    "som",
+    "swa",
+    "sun",
+    "tir",
+    "yor",
+]
 
 def save_data_split(
     track: Literal["a", "b"], 

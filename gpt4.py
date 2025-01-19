@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import json
 from typing import Optional, Literal, Dict
@@ -14,18 +15,19 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 import fire
 
-from data_utils import load_dataset, LABELS, LANGUAGES
+from data_utils import load_dataset, LABELS, LANGUAGES, LOW_RESOURCE_LANGUAGES
 from eval_utils import compute_metrics
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import SKLearnVectorStore
 
-def setup_llm(model: str):
+def setup_llm(model: str, base_url: str | None = None):
     if model == "gpt-4o":
         from langchain_openai import ChatOpenAI
         llm = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o")
     else:
         from langchain_ollama import OllamaLLM
-        llm = OllamaLLM(model=model)
+        print(base_url)
+        llm = OllamaLLM(model=model, client_kwargs={"timeout": 120.}, base_url=base_url)
     return llm
 
 
@@ -152,7 +154,12 @@ def get_fewshot_chain(retriever, llm, language):
         "tat": "Tatar",
         "tir": "Tigrinya",
         "ukr": "Ukrainian",
-        "yor": "Yoruba"
+        "yor": "Yoruba",
+        "arq": "Algerian Arabic",
+        "ary": "Moroccan Arabic",
+        "pcm": "Nigerian-Pidgin",
+        "chn": "Chinese",
+        "ptmz": "Portuguese (Mozambican)",
     }
     if False:
         system = f"Ты -- эксперт по распознованию эмоций в тексте."
@@ -250,8 +257,9 @@ def fewshot(
     use_mmr: bool = False,
     num_workers: int = 7,
     split: Literal["train", "validation", "dev", "test"] = "dev",
+    base_url: str | None = None,
 ):
-    llm = setup_llm(model=model)
+    llm = setup_llm(model=model, base_url=base_url)
     # Load the training data
     train_data = load_dataset(
         track="a",
@@ -403,22 +411,33 @@ def fewshot_all_languages(
     model_name: str = "BAAI/bge-m3",
     device: str = "cpu",
     num_examples: int = 100,
+    low_resource_num_examples: int | None = None,
     use_mmr: bool = False,
-    num_workers: int = 7,
+    num_workers: int = 1,
     split: Literal["train", "validation", "dev", "test"] = "dev",
+    base_url: str | None = None,
 ):
+    if low_resource_num_examples is None:
+        low_resource_num_examples = num_examples
     for language in tqdm.tqdm(LANGUAGES):
-        print(f"Processing language {language}...")
+        language_num_examples = (
+            low_resource_num_examples 
+            if language in LOW_RESOURCE_LANGUAGES
+            else num_examples
+        )
+        print(f"Processing language {language} with {language_num_examples} examples...")
         fewshot(
             model=model,
             data_root=data_root,
             predictions_dir=predictions_dir,
             model_name=model_name,
             device=device,
-            num_examples=num_examples,
+            num_examples=language_num_examples,
             use_mmr=use_mmr,
             num_workers=num_workers,
-            split=split
+            split=split,
+            language=language,
+            base_url=base_url,
         )
 
 
