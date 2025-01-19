@@ -8,7 +8,55 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 LABELS = ["disgust", "anger", "fear", "joy", "sadness", "surprise"]
-LANGUAGES = ["eng", "amh", "deu", "oro", "ptbr", "rus", "som", "sun", "tir"]
+LANGUAGES = [
+    "eng", 
+    "amh", 
+    "deu", 
+    "ptbr", 
+    "rus", 
+    "som", 
+    "sun", 
+    "tir",
+    "afr",
+    "arq",
+    "ary",
+    "chn",
+    "esp",
+    "hau",
+    "hin",
+    "ibo",
+    "kin",
+    "mar",
+    "orm",
+    "pcm",
+    "ptmz",
+    "ron",
+    "swa",
+    "swe",
+    "tat",
+    "ukr",
+    "vmw",
+    "yor",
+]
+LOW_RESOURCE_LANGUAGES = [
+    "afr",
+    "amh",
+    "vmw",
+    "hau",
+    "ibo",
+    "xho",
+    "zul",
+    "jav",
+    "kin",
+    "mar",
+    "pcm",
+    "orm",
+    "som",
+    "swa",
+    "sun",
+    "tir",
+    "yor",
+]
 
 def save_data_split(
     track: Literal["a", "b"], 
@@ -59,8 +107,8 @@ def load_dataset(
     languages=None
 ) -> Union[Dict[str, pd.DataFrame], datasets.DatasetDict]:
     data_root = Path(data_root)
-    train_data_root = data_root / "train" / f"track_{track}"
-    dev_data_root = data_root / "dev" / f"track_{track}"
+    train_data_root = data_root / f"track_{track}" / "train"
+    dev_data_root = data_root / f"track_{track}" / "dev"
 
     # Load split IDs
     split_file = data_root / "split_ids.json"
@@ -108,22 +156,30 @@ def load_dataset(
         dev_data.append(data)
     dev_data = pd.concat(dev_data, axis=0).reset_index(drop=True)
 
+    train_full_data = pd.concat([train_data, val_data])
+    train_full_with_dev_data = pd.concat([train_data, val_data, dev_data])
+
     if format == "datasets":
         train_data = datasets.Dataset.from_pandas(train_data)
         val_data = datasets.Dataset.from_pandas(val_data)
         dev_data = datasets.Dataset.from_pandas(dev_data)
+        train_full_data = datasets.Dataset.from_pandas(train_full_data)
+        train_full_with_dev_data = datasets.Dataset.from_pandas(train_full_with_dev_data)
 
-    data = {"train": train_data, "validation": val_data, "dev": dev_data}
+    data = {
+        "train": train_data, 
+        "validation": val_data, 
+        "dev": dev_data,
+        "train_full": train_full_data,
+        "train_full_with_dev": train_full_with_dev_data,
+    }
     if format == "datasets":
         data = datasets.DatasetDict(data)
     return data
 
 
-def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: Literal["train", "validation", "dev", "train_full"] = "validation") -> pd.DataFrame:
+def load_data_for_language( language: str, track: str = "a", data_root: str = "./public_data", split: Literal["train", "validation", "dev", "train_full", "train_full_with_dev"] = "validation") -> pd.DataFrame:
     data = load_dataset(track=track, data_root=data_root, format="pandas")
-    if split == "train_full":
-        data = pd.concat([data["train"], data["validation"]])
-    else:
-        data = data[split]
+    data = data[split]
     data = data[data["language"] == language]
     return data
