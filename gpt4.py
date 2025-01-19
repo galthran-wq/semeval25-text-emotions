@@ -223,21 +223,24 @@ Do not give explanations. Just return the JSON object.
     return chain
 
 def parse_results(results: Dict[str, str]):
+    parser = PydanticOutputParser(pydantic_object=ClassificationResult)
     parsed_results: Dict[str, Dict] = {}
     for id, result in results.items():
         try:
-            parsed_result = ClassificationResult.model_validate(json.loads(result))
+            parsed_result = parser.parse(result)
             parsed_results[id] = parsed_result.model_dump()
         except Exception as e:
             print(f"Failed to parse result: \"{result}\"... Trying to fix...")
         # some models have probem generating vlaid jsons
+        if not isinstance(result, str):
+            continue
         lines = result.split("\n")
         for line in lines:
             line = line.strip()
             if line.startswith("AI: "):
                 line = line[len("AI: "):].strip()
                 try:
-                    parsed_result = ClassificationResult.model_validate(json.loads(line))
+                    parsed_result = parser.parse(line)
                     parsed_results[id] = parsed_result.model_dump()
                     print(f"Successfully fixed to: {line}")
                     break
