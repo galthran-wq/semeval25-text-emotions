@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pydantic import BaseModel
 from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_core.example_selectors.base import BaseExampleSelector
-from utils.ngram_example_selector import NGramOverlapKExampleSelector
+from utils.ngram_example_selector import NGramOverlapKExampleSelector as NGramOverlapKExampleSelector_
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
@@ -55,7 +55,19 @@ class RetrieverExampleSelector(BaseExampleSelector):
         return self.format_docs(best_k_docs)
 
 
-# class 
+class NGramOverlapKExampleSelector(NGramOverlapKExampleSelector_):
+    def format_docs(self, docs):
+        return [
+            {
+                "text": doc.page_content, 
+                "result": doc.metadata["result"]
+            }
+            for doc in docs
+        ]
+
+    def select_examples(self, input_variables):
+        best_k_docs = super().select_examples(input_variables)
+        return self.format_docs(best_k_docs)
 
 
 class ClassificationResult(BaseModel):
@@ -293,10 +305,8 @@ def fewshot(
         train_split="train"
     train_data = train_data[train_split]
 
-    if "ngram" in model_name:
-        # k = model_name.split("-")[1]
-        # NGramOverlapKExampleSelector(examples=train_data, k=k)
-        pass
+    if model_name == "ngram":
+        example_selector = NGramOverlapKExampleSelector(examples=data_to_docs(train_data), k=num_examples)
     else:
         example_selector = get_bge_example_selector(train_data, model_name, device, num_examples, use_mmr)
 
