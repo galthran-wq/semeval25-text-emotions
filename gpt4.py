@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pydantic import BaseModel
 from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_core.example_selectors.base import BaseExampleSelector
+from utils.ngram_example_selector import NGramOverlapKExampleSelector
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
@@ -54,6 +55,9 @@ class RetrieverExampleSelector(BaseExampleSelector):
         return self.format_docs(best_k_docs)
 
 
+# class 
+
+
 class ClassificationResult(BaseModel):
     disgust: Optional[bool] = False
     anger: Optional[bool] = False
@@ -91,21 +95,25 @@ Do not give explanations. Just return the JSON object.
     )
     return chain
 
-
-def get_bge_retriever(data: pd.DataFrame, model_name: str, device: str = "cpu", n_examples: int = 5, mrr: bool = False):
+def data_to_docs(data: pd.DataFrame) -> List[Document]:
     data: List[Document] = [
         Document(
             page_content=entry["text"], 
             metadata={"result": ClassificationResult(
-                anger=entry["anger"],
-                fear=entry["fear"],
-                joy=entry["joy"],
-                sadness=entry["sadness"],
-                surprise=entry["surprise"]
+                anger=entry.get("anger", None),
+                fear=entry.get("fear", None),
+                joy=entry.get("joy", None),
+                sadness=entry.get("sadness", None),
+                surprise=entry.get("surprise", None),
+                disgust=entry.get("disgust", None),
             ).model_dump_json()}
         )
         for i, entry in data.iterrows()
     ]
+    return data
+
+def get_bge_example_selector(data: pd.DataFrame, model_name: str, device: str = "cpu", n_examples: int = 5, mrr: bool = False):
+    data = data_to_docs(data)
     model_kwargs = {"device": device}
     encode_kwargs = {"normalize_embeddings": True}
     if model_name == "BAAI/bge-m3":
@@ -118,10 +126,17 @@ def get_bge_retriever(data: pd.DataFrame, model_name: str, device: str = "cpu", 
         )
     db = SKLearnVectorStore.from_documents(data, hf)
     retriever = db.as_retriever(search_kwargs={"k": n_examples}, search_type="similarity" if not mrr else "mmr")
-    return retriever
+    example_selector = RetrieverExampleSelector(retriever)
+    return example_selector
 
 
-def get_fewshot_chain(retriever, llm, language):
+def get_ngram_example_selector(data: pd.DataFrame, n_examples: int = 5):
+    # example_selector = RetrieverExampleSelector(retriever)
+    # return example_selector
+    return None
+
+
+def get_fewshot_chain(example_selector, llm, language):
     language_map = {
         "rus": "Russian",
         "eng": "English",
@@ -203,7 +218,6 @@ Do not give explanations. Just return the JSON object.
         ("user", "{text}"),
         ("assistant", "{result}"),
     ])
-    example_selector = RetrieverExampleSelector(retriever)
     few_shot_prompt = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
         example_selector=example_selector
@@ -279,10 +293,14 @@ def fewshot(
         train_split="train"
     train_data = train_data[train_split]
 
-    # Initialize the BGE embedding model
-    retriever = get_bge_retriever(train_data, model_name, device, num_examples, use_mmr)
+    if "ngram" in model_name:
+        # k = model_name.split("-")[1]
+        # NGramOverlapKExampleSelector(examples=train_data, k=k)
+        pass
+    else:
+        example_selector = get_bge_example_selector(train_data, model_name, device, num_examples, use_mmr)
 
-    chain = get_fewshot_chain(retriever, llm, language)
+    chain = get_fewshot_chain(example_selector, llm, language)
 
     os.makedirs(predictions_dir, exist_ok=True)
     predictions_file = os.path.join(predictions_dir, f"{language}_{split}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_predictions.json")
@@ -312,7 +330,7 @@ def fewshot(
 
     # Run the chain only for entries that need predictions
     if texts_to_predict:
-        chain = get_fewshot_chain(retriever, llm, language)
+        chain = get_fewshot_chain(example_selector, llm, language)
         results = run_chain(chain=chain, texts=texts_to_predict, ids=ids_to_predict, num_workers=num_workers)
         results = parse_results(results)
         predictions.update(results)
