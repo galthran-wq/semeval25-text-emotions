@@ -10,21 +10,27 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pydantic import BaseModel
 from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_core.example_selectors.base import BaseExampleSelector
-from utils.ngram_example_selector import NGramOverlapKExampleSelector as NGramOverlapKExampleSelector_
+#from utils.ngram_example_selector import NGramOverlapKExampleSelector as NGramOverlapKExampleSelector_
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 import fire
+from httpx import Client
 
+from utils.ngram_example_selector import NGramOverlapKExampleSelector
 from data_utils import load_dataset, LABELS, LANGUAGES, LOW_RESOURCE_LANGUAGES
 from eval_utils import compute_metrics
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain_community.vectorstores import SKLearnVectorStore
 
 def setup_llm(model: str, base_url: str | None = None):
-    if model == "gpt-4o":
+    if model == "gpt-4o" or model == "gpt-4o-mini":
         from langchain_openai import ChatOpenAI
-        llm = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o")
+        llm = ChatOpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"), 
+            model=model,
+            http_client=Client(timeout=120.0, proxies={"http://": os.getenv("PROXY", None), "https://": os.getenv("PROXY", None)})
+        )
     else:
         from langchain_ollama import OllamaLLM
         print(base_url)
@@ -54,20 +60,6 @@ class RetrieverExampleSelector(BaseExampleSelector):
         best_k_docs = self.retriever.invoke(new_text)
         return self.format_docs(best_k_docs)
 
-
-class NGramOverlapKExampleSelector(NGramOverlapKExampleSelector_):
-    def format_docs(self, docs):
-        return [
-            {
-                "text": doc.page_content, 
-                "result": doc.metadata["result"]
-            }
-            for doc in docs
-        ]
-
-    def select_examples(self, input_variables):
-        best_k_docs = super().select_examples(input_variables)
-        return self.format_docs(best_k_docs)
 
 
 class ClassificationResult(BaseModel):
@@ -300,7 +292,7 @@ def fewshot(
         # TODO: train + validation
         train_split="train_full"
     elif split == "test":
-        train_data = "train_full_with_dev"
+        train_split ="train_full_with_dev"
     else:
         train_split="train"
     train_data = train_data[train_split]
@@ -339,7 +331,9 @@ def fewshot(
             ids_to_predict.append(id)
 
     # Run the chain only for entries that need predictions
-    if texts_to_predict:
+    print(f"Len of predictions: {len(predictions)}; Len of test: {len(data['id'])}; Predicting for {len(ids_to_predict)}...")
+    print(f"First five ids to predict: {ids_to_predict[:5]}")
+    if len(texts_to_predict) == len(data["id"]): # disable this feature
         chain = get_fewshot_chain(example_selector, llm, language)
         results = run_chain(chain=chain, texts=texts_to_predict, ids=ids_to_predict, num_workers=num_workers)
         results = parse_results(results)
@@ -349,9 +343,10 @@ def fewshot(
         with open(predictions_file, "w") as f:
             json.dump(predictions, f)
     
-    metrics = compute_metrics(predictions, languages=[language], split=split)
-    with open(os.path.join(predictions_dir, f"{language}_{split}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_metrics.json"), "w") as f:
-        json.dump(metrics, f)
+    if split != "test":
+        metrics = compute_metrics(predictions, languages=[language], split=split)
+        with open(os.path.join(predictions_dir, f"{language}_{split}_{model_name.split('/')[-1]}_{num_examples}shot_{'mmr' if use_mmr else 'cosine'}_metrics.json"), "w") as f:
+            json.dump(metrics, f)
 
     return chain
 
@@ -371,8 +366,9 @@ def run_chain(chain, texts, ids, num_workers: int = 7):
             future_to_id = {executor.submit(process_text, id, text): id for id, text in zip(ids, texts)}
             for future in tqdm.tqdm(as_completed(future_to_id), total=len(future_to_id), desc="Processing texts"):
                 id, result = future.result()
-                if result is not None:
-                    results[id] = {label: result.model_dump()[label] for label in LABELS}
+                # if result is not None:
+                #     results[id] = {label: result.model_dump()[label] for label in LABELS}
+                results[id] = result
     else:
         for id, text in tqdm.tqdm(zip(ids, texts), desc="Processing texts sequentially:"):
             id, result = process_text(id, text)
