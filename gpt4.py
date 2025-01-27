@@ -266,6 +266,36 @@ def parse_results(results: Dict[str, str]):
                     print(f"Failed to fix as: {line}")
     return parsed_results
 
+def setup_example_selector(
+    language: str, 
+    data_root: str, 
+    model_name: str, 
+    device: str, 
+    num_examples: int, 
+    use_mmr: bool, 
+    split: Literal["train", "validation", "dev", "test"] = "dev"
+):
+    train_data = load_dataset(
+        track="a",
+        languages=[language], 
+        data_root=data_root, 
+        format="pandas"
+    )
+    if split == "dev":
+        # TODO: train + validation
+        train_split="train_full"
+    elif split == "test":
+        train_split ="train_full_with_dev"
+    else:
+        train_split="train"
+    train_data = train_data[train_split]
+    if model_name == "ngram":
+        example_selector = NGramOverlapKExampleSelector(examples=data_to_docs(train_data), k=num_examples)
+    else:
+        example_selector = get_bge_example_selector(train_data, model_name, device, num_examples, use_mmr)
+    return example_selector
+
+
 def fewshot(
     *,
     model: str,
@@ -281,27 +311,7 @@ def fewshot(
     base_url: str | None = None,
 ):
     llm = setup_llm(model=model, base_url=base_url)
-    # Load the training data
-    train_data = load_dataset(
-        track="a",
-        languages=[language], 
-        data_root=data_root, 
-        format="pandas"
-    )
-    if split == "dev":
-        # TODO: train + validation
-        train_split="train_full"
-    elif split == "test":
-        train_split ="train_full_with_dev"
-    else:
-        train_split="train"
-    train_data = train_data[train_split]
-
-    if model_name == "ngram":
-        example_selector = NGramOverlapKExampleSelector(examples=data_to_docs(train_data), k=num_examples)
-    else:
-        example_selector = get_bge_example_selector(train_data, model_name, device, num_examples, use_mmr)
-
+    example_selector = setup_example_selector(language, data_root, model_name, device, num_examples, use_mmr, split)
     chain = get_fewshot_chain(example_selector, llm, language)
 
     os.makedirs(predictions_dir, exist_ok=True)
@@ -358,6 +368,8 @@ def run_chain(chain, texts, ids, num_workers: int = 7):
             result = chain.invoke(text)
             return id, result
         except Exception as e:
+            import traceback
+            print(traceback.format_exc())
             print(f"Error processing text ID {id}: {e}")
             return id, None
 
