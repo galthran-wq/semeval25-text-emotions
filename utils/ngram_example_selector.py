@@ -4,7 +4,7 @@ https://www.nltk.org/_modules/nltk/translate/bleu_score.html
 https://aclanthology.org/P02-1040.pdf
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import numpy as np
 from langchain_core.documents import Document
@@ -49,7 +49,7 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
     https://aclanthology.org/P02-1040.pdf
     """
 
-    examples: List[Document]
+    examples: List[Any]
     """A list of the examples that the prompt template expects."""
 
     threshold: float = -1.0
@@ -116,6 +116,15 @@ class NGramOverlapExampleSelector(BaseExampleSelector, BaseModel):
 class NGramOverlapKExampleSelector(NGramOverlapExampleSelector):
     k: Optional[int] = None
 
+    def format_docs(self, docs):
+        return [
+            {
+                "text": doc.page_content, 
+                "result": doc.metadata["result"]
+            }
+            for doc in docs
+        ]
+
     def select_examples(self, input_variables):
         examples = super().select_examples(input_variables)
-        return examples[:self.k]
+        return self.format_docs(examples[:self.k])
