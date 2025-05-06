@@ -1,4 +1,7 @@
 from typing import Dict, Literal, List
+from sklearn.exceptions import UndefinedMetricWarning
+import warnings
+warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
 
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
