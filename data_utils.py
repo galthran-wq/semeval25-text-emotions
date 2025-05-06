@@ -56,6 +56,7 @@ LOW_RESOURCE_LANGUAGES = [
     "sun",
     "tir",
     "yor",
+    "tat"
 ]
 
 def save_data_split(
@@ -109,6 +110,7 @@ def load_dataset(
     data_root = Path(data_root)
     train_data_root = data_root / f"track_{track}" / "train"
     dev_data_root = data_root / f"track_{track}" / "dev"
+    test_data_root = data_root / f"track_{track}" / "test"
 
     # Load split IDs
     split_file = data_root / "split_ids.json"
@@ -156,6 +158,18 @@ def load_dataset(
         dev_data.append(data)
     dev_data = pd.concat(dev_data, axis=0).reset_index(drop=True)
 
+    # Load test data
+    test_data = []
+    for language_data_file in test_data_root.glob("*.csv"):
+        language = language_data_file.stem.split("_")[0]
+        if languages is not None and language not in languages:
+            continue
+        data = pd.read_csv(language_data_file)
+        data.columns = data.columns.str.lower()
+        data["language"] = language
+        test_data.append(data)
+    test_data = pd.concat(test_data, axis=0).reset_index(drop=True)
+
     train_full_data = pd.concat([train_data, val_data])
     train_full_with_dev_data = pd.concat([train_data, val_data, dev_data])
 
@@ -170,6 +184,7 @@ def load_dataset(
         "train": train_data, 
         "validation": val_data, 
         "dev": dev_data,
+        "test": test_data,
         "train_full": train_full_data,
         "train_full_with_dev": train_full_with_dev_data,
     }
