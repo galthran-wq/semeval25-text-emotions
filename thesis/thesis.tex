@@ -79,80 +79,29 @@ Deep learning, emotion detection, multilingual NLP, retrieval-augmented generati
 
 \section{Introduction}
 
-Emotions are fundamental to human communication and experience, coloring our interactions, decisions, and perceptions. The ability to detect and understand emotions in text has become increasingly important in natural language processing (NLP), with applications spanning various domains. From customer service and mental health monitoring to social media analysis and human-computer interaction, automated emotion detection systems serve as valuable tools for understanding human sentiment at scale.
+Emotions are fundamental to human communication and experience, coloring our interactions, decisions, and perceptions. The ability to detect and understand emotions in text has become increasingly important in natural language processing (NLP), with applications spanning various domains including customer service, mental health monitoring, content recommendation, social media analysis, and educational technology.
 
-\subsection{Context and Motivation}
+Unlike traditional sentiment analysis, which typically focuses on determining whether a text is positive, negative, or neutral, emotion detection aims to identify specific emotional states such as joy, sadness, anger, fear, surprise, and disgust. This fine-grained understanding of affective content enables more nuanced and human-like interactions between computational systems and users.
 
-Over the past decade, emotion detection has emerged as a critical area of research within the broader field of affective computing. Unlike traditional sentiment analysis, which typically focuses on determining whether a text is positive, negative, or neutral, emotion detection aims to identify specific emotional states such as joy, sadness, anger, fear, surprise, and disgust. This fine-grained understanding of affective content enables more nuanced and human-like interactions between computational systems and users.
+The development of effective multi-lingual, multi-label emotion detection systems faces several interconnected challenges. Linguistic diversity presents a significant hurdle, as human languages vary dramatically in their lexical, syntactic, and semantic structures, including how emotions are expressed. Data scarcity is particularly problematic for low-resource languages, which lack substantial labeled datasets for emotion detection. The multi-label nature of emotions adds complexity, as texts frequently express multiple emotions simultaneously. Cross-cultural variations in how emotions are expressed and interpreted further complicate the development of universally applicable systems. Finally, computational efficiency concerns arise when considering the impracticality of training separate models for thousands of languages.
 
-The applications of emotion detection are diverse and impactful:
-
-\begin{itemize}
-\item \textbf{Customer Experience}: Identifying customer emotions in reviews, support tickets, and feedback can help businesses respond appropriately and improve services.
-\item \textbf{Mental Health Support}: Detecting emotional distress in text can support early intervention in mental health contexts and assist in monitoring well-being.
-\item \textbf{Content Recommendation}: Understanding the emotional impact of content can lead to more personalized recommendations in entertainment and media platforms.
-\item \textbf{Social Media Analysis}: Tracking emotional responses to events, products, or public figures provides valuable insights for marketing, policy-making, and crisis management.
-\item \textbf{Educational Technology}: Recognizing student emotions can help adaptive learning systems respond to frustration, confusion, or engagement.
-\end{itemize}
-
-Despite significant advances in this field, most emotion detection research and applications have focused primarily on high-resource languages, particularly English. This linguistic imbalance creates a significant gap in automated emotion understanding for the majority of the world's population who speak low-resource languages. As digital communication increasingly crosses linguistic boundaries, the need for emotion detection systems that work effectively across multiple languages becomes more pressing.
-
-\subsection{Problem Statement}
-
-The development of effective multi-lingual, multi-label emotion detection systems faces several interconnected challenges:
-
-\textbf{Linguistic Diversity}: Human languages vary dramatically in their lexical, syntactic, and semantic structures. These variations extend to how emotions are expressed, with some cultures having specific emotion concepts that lack direct translations in other languages. For instance, the German "Schadenfreude" (pleasure derived from another's misfortune) or the Portuguese "saudade" (a deep longing for something absent) represent culture-specific emotional concepts. Building systems that can recognize emotions across such diverse linguistic contexts requires approaches that can adapt to these variations.
-
-\textbf{Data Scarcity}: While high-resource languages like English benefit from abundant annotated data, most of the world's languages lack substantial labeled datasets for emotion detection. This data scarcity makes it difficult to train robust models for these languages, particularly when using traditional supervised learning approaches that rely on large amounts of labeled data.
-
-\textbf{Multi-label Complexity}: Emotions often co-occur, with texts frequently expressing multiple emotions simultaneously. This multi-label nature adds complexity to both model architecture and evaluation, requiring methods that can effectively capture relationships between emotions rather than treating them as mutually exclusive categories.
-
-\textbf{Cross-cultural Variations}: The expression and interpretation of emotions vary significantly across cultures, affecting how emotions are verbalized in different languages. These cultural differences present challenges for creating universally applicable emotion detection systems.
-
-\textbf{Computational Efficiency}: Training separate models for each language is computationally expensive and impractical, especially given the thousands of languages spoken worldwide. More efficient approaches are needed to make multi-lingual emotion detection accessible and scalable.
-
-Addressing these challenges requires innovative approaches that can operate effectively with limited labeled data, adapt to linguistic and cultural differences, and handle the inherent complexity of multi-label emotion classification.
-
-\subsection{Research Questions}
-
-This thesis investigates several key research questions that guide our exploration of multi-lingual, multi-label emotion detection:
-
-\begin{enumerate}
-\item \textbf{How do traditional supervised approaches compare to retrieval-augmented approaches in emotion detection?}
-   We examine whether newer paradigms like retrieval-augmented generation can outperform traditional fine-tuning approaches for emotion detection tasks. This comparison explores the trade-offs between parameter-efficient methods that leverage in-context learning and approaches that require extensive model training.
-
-\item \textbf{How can we effectively handle emotion detection in low-resource languages?}
-   We investigate techniques that can transfer knowledge from high-resource to low-resource languages, as well as methods that can perform well with minimal labeled examples. This question addresses the practical challenge of developing emotion detection systems for the majority of the world's languages, which lack extensive training data.
-
-\item \textbf{What are the specific challenges in multi-label emotion detection, and how can they be addressed?}
-   We explore the complexities of detecting multiple co-occurring emotions in text and evaluate different strategies for handling these interdependencies. This includes examining how the relationships between emotions can be modeled effectively across different languages and cultural contexts.
-
-\item \textbf{How do different retrieval mechanisms affect the performance of retrieval-augmented generation for emotion detection?}
-   We investigate how various retrieval strategies impact the quality of emotion detection, particularly when operating across diverse languages with varying levels of resource availability.
-
-\item \textbf{What is the impact of model ensemble and aggregation strategies on multi-lingual emotion detection performance?}
-   We examine how combining predictions from multiple models using different aggregation techniques can improve performance and robustness across languages and emotion categories.
-\end{enumerate}
-
-\subsection{Thesis Structure}
+This thesis investigates multi-lingual, multi-label emotion detection, exploring approaches that can operate effectively with limited labeled data, adapt to linguistic and cultural differences, and handle the inherent complexity of multi-label emotion classification. We compare traditional supervised approaches with newer paradigms like retrieval-augmented generation, examining their effectiveness across languages with varying resource availability.
 
 The remainder of this thesis is organized as follows:
 
-\textbf{Chapter 2: Related Work} provides a comprehensive review of previous research in emotion detection, multi-label classification, multi-lingual NLP models, retrieval-augmented generation, few-shot learning, and the application of large language models to emotion detection tasks.
+\textbf{Chapter 2: Related Work} reviews previous research in emotion detection, multi-label classification, multi-lingual NLP models, retrieval-augmented generation, few-shot learning, and large language models for emotion detection.
 
-\textbf{Chapter 3: Data} describes the BRIGHTER dataset, including its creation, annotation process, composition, and the specific challenges it presents for multi-lingual emotion detection.
+\textbf{Chapter 3: Data} describes the BRIGHTER dataset, including its creation, annotation process, and composition.
 
-\textbf{Chapter 4: Methodology} presents the four approaches we explored: BERT-based fine-tuning, SetFit few-shot learning, Seq2Seq generative models, and our novel EmoRAG system. Each approach is described in detail, including model architecture, training procedures, and implementation specifics.
+\textbf{Chapter 4: Methodology} presents our four approaches: BERT-based fine-tuning, SetFit few-shot learning, Seq2Seq generative models, and our novel EmoRAG system.
 
-\textbf{Chapter 5: Experiments} outlines our experimental setup, evaluation metrics, and hyperparameter tuning strategies for each approach.
+\textbf{Chapter 5: Experiments} outlines our experimental setup, evaluation metrics, and hyperparameter tuning strategies.
 
-\textbf{Chapter 6: Results} presents a comprehensive analysis of our experimental findings, including overall performance comparisons, language-specific analyses, emotion-specific evaluations, and ablation studies.
+\textbf{Chapter 6: Results} analyzes our experimental findings, including performance comparisons across approaches, languages, and emotion categories.
 
-\textbf{Chapter 7: Discussion} interprets our results, comparing the strengths and weaknesses of each approach, analyzing performance on low-resource languages, and examining common error patterns.
+\textbf{Chapter 7: Discussion} interprets our results, comparing the strengths and weaknesses of each approach.
 
-\textbf{Chapter 8: Conclusion and Future Work} summarizes our key findings, acknowledges limitations, and suggests promising directions for future research in multi-lingual emotion detection.
-
-The thesis concludes with \textbf{References} and \textbf{Appendices} that provide additional details on prompt templates, hyperparameters, supplementary results, and implementation code.
+\textbf{Chapter 8: Conclusion and Future Work} summarizes key findings and suggests directions for future research.
 
 \section{Related Work}
 
