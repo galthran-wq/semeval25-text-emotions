@@ -134,22 +134,6 @@ This thesis investigates several key research questions that guide our explorati
    We examine how combining predictions from multiple models using different aggregation techniques can improve performance and robustness across languages and emotion categories.
 \end{enumerate}
 
-\subsection{Contributions}
-
-This thesis makes several significant contributions to the field of multi-lingual emotion detection:
-
-\begin{enumerate}
-\item \textbf{Comprehensive Evaluation of Multiple Approaches}: We provide a systematic comparison of four distinct approaches to multi-lingual, multi-label emotion detection: BERT-based fine-tuning, SetFit few-shot learning, Seq2Seq generative models, and our novel EmoRAG system. This comparison offers insights into the strengths and limitations of each approach across different languages and emotion categories.
-
-\item \textbf{Development of EmoRAG}: We introduce EmoRAG (Emotion Recognition with Retrieval-Augmented Generation), a novel system that combines retrieval mechanisms with large language models to perform emotion detection without requiring model fine-tuning. EmoRAG demonstrates how retrieval-augmented generation can be effectively applied to multi-label classification tasks across multiple languages.
-
-\item \textbf{Novel Retrieval and Aggregation Strategies}: We develop and evaluate multiple retrieval mechanisms (n-gram and embedding-based) and aggregation strategies (including label-specific weighted voting) that significantly enhance the performance of multi-lingual emotion detection, particularly for low-resource languages.
-
-\item \textbf{Extensive Experimental Analysis}: We conduct a comprehensive analysis of performance across 28 languages with varying resource availability, providing valuable insights into cross-lingual transfer, language family effects, and the specific challenges of low-resource languages.
-
-\item \textbf{Practical Framework for Multi-lingual NLP}: Beyond emotion detection, our work contributes a framework for approaching other multi-lingual NLP tasks, particularly in settings where labeled data is limited and linguistic diversity is high.
-\end{enumerate}
-
 \subsection{Thesis Structure}
 
 The remainder of this thesis is organized as follows:
@@ -176,13 +160,111 @@ This chapter reviews the existing literature relevant to multi-lingual, multi-la
 
 \subsection{Emotion Detection in Text}
 
-Emotion detection in text has evolved significantly over the past two decades, from lexicon-based approaches to sophisticated neural models. Early work by Strapparava and Mihalcea (2007) introduced one of the first datasets for emotion recognition in English text, defining the task as detecting Ekman's six basic emotions: joy, sadness, anger, fear, surprise, and disgust. This work established the foundation for most subsequent research in the field and remains influential in how emotions are categorized in computational approaches.
+Emotion detection in text has evolved significantly over the past two decades, from lexicon-based approaches to sophisticated neural models. Early work by \cite{strapparava2007semeval} introduced one of the first datasets for emotion recognition in English text, defining the task as detecting Ekman's six basic emotions: joy, sadness, anger, fear, surprise, and disgust. This work established the foundation for most subsequent research in the field and remains influential in how emotions are categorized in computational approaches.
 
-Lexicon-based methods were among the first approaches to emotion detection. Mohammad and Turney (2013) developed the NRC Emotion Lexicon, mapping English words to eight emotions and two sentiments. Subsequent work by Thelwall et al. (2010) with SentiStrength provided methods for detecting emotion intensity, showing that strength of emotion can be accurately detected from text. While lexicon-based methods offer interpretability and language-specific insights, they struggle with contextual understanding and require extensive manual annotation for each language.
+Lexicon-based methods were among the first approaches to emotion detection. \cite{mohammad2013crowdsourcing} developed the NRC Emotion Lexicon, mapping English words to eight emotions and two sentiments. Subsequent work by \cite{thelwall2010sentiment} with SentiStrength provided methods for detecting emotion intensity, showing that strength of emotion can be accurately detected from text. While lexicon-based methods offer interpretability and language-specific insights, they struggle with contextual understanding and require extensive manual annotation for each language.
 
-Supervised machine learning techniques dominated the next wave of emotion detection research. Work by Balahur et al. (2013) demonstrated the effectiveness of Support Vector Machines (SVMs) with careful feature engineering for emotion classification. In their comprehensive evaluation, they showed that n-gram features with term frequency-inverse document frequency (TF-IDF) weighting could accurately distinguish between emotion categories. Similarly, Colneriĉ and Demsar (2018) applied ensemble methods across multiple datasets, highlighting the importance of combining different classification strategies for robust emotion detection.
+Supervised machine learning techniques dominated the next wave of emotion detection research. Work by \cite{balahur2013sentiment} demonstrated the effectiveness of Support Vector Machines (SVMs) with careful feature engineering for emotion classification. In their comprehensive evaluation, they showed that n-gram features with term frequency-inverse document frequency (TF-IDF) weighting could accurately distinguish between emotion categories. Similarly, \cite{colneric2018emotion} applied ensemble methods across multiple datasets, highlighting the importance of combining different classification strategies for robust emotion detection.
 
-The deep learning era brought significant advances to emotion detection. Felbo et al. (2017) introduced DeepMoji, which leveraged distant supervision from emojis to pre-train models for emotion recognition. Their approach demonstrated the power of large-scale pre-training on naturally occurring emotional signals. Building on this idea, Abdul-Mageed and Ungar (2017) developed large-scale Twitter-specific models for emotion detection, showing that domain-specific pre-training significantly improves performance.
+The deep learning era brought significant advances to emotion detection. \cite{felbo2017using} introduced DeepMoji, which leveraged distant supervision from emojis to pre-train models for emotion recognition. Their approach demonstrated the power of large-scale pre-training on naturally occurring emotional signals. Building on this idea, \cite{abdul2017emonet} developed large-scale Twitter-specific models for emotion detection, showing that domain-specific pre-training significantly improves performance.
+
+More recently, transformer-based approaches have set new benchmarks in emotion detection. \cite{demszky2020goemotions} created GoEmotions, a large-scale dataset with 27 emotion categories, and demonstrated strong performance with BERT-based models. Similarly, \cite{zhang2022emotion} showed how different pre-trained language models compare for emotion detection, with RoBERTa consistently outperforming other architectures. These works highlight the effectiveness of transfer learning from large pre-trained models for understanding emotional content in text.
+
+Despite this progress, most emotion detection research has focused primarily on English and other high-resource languages. The lack of annotated data in diverse languages has limited progress toward truly multi-lingual emotion detection systems. As noted by \cite{plaza2020overview} in their survey of emotion detection in Spanish, techniques that work well for English often need significant adaptation for other languages, particularly those with different morphological structures or cultural contexts for emotion expression.
+
+\subsection{Multi-label Classification}
+
+Multi-label classification, where instances can belong to multiple categories simultaneously, presents unique challenges compared to multi-class classification. Emotion detection is inherently multi-label, as texts often express multiple emotions at once. \cite{tsoumakas2007multi} provided the foundational taxonomy of multi-label classification approaches, dividing them into problem transformation methods and algorithm adaptation methods. This categorization remains useful for understanding the landscape of multi-label techniques.
+
+In problem transformation approaches, \cite{read2011classifier} introduced classifier chains, which model inter-label dependencies by building a sequence of binary classifiers. Their work demonstrated significant improvements over binary relevance methods that treat each label independently. Similarly, \cite{zhang2007ml} proposed the multi-label k-nearest neighbor (ML-kNN) algorithm, adapting the traditional kNN approach to multi-label contexts with statistical information from neighbor labels.
+
+Deep learning approaches have further advanced multi-label classification. \cite{nam2014large} showed that using cross-entropy loss with a sigmoid activation function per label outperforms ranking-based loss functions in neural networks for multi-label classification. Building on this, \cite{chen2019multi} introduced a novel attention mechanism for multi-label text classification that captures both document-level and label-specific representations. Their approach demonstrated state-of-the-art performance on several benchmark datasets.
+
+The challenge of label imbalance in multi-label settings is particularly relevant to emotion detection, as certain emotions appear more frequently than others. \cite{wu2020distribution} addressed this issue with a distribution-balanced loss function that effectively handles both head and tail labels in large-scale multi-label classification. Their work provides valuable insights for emotion detection tasks where some emotions are naturally rarer than others.
+
+Another key challenge in multi-label classification is capturing label correlations. \cite{yeh2017learning} proposed a label-specific attention model that learns different feature representations for different labels while also modeling label correlations. This approach is particularly relevant for emotion detection, where emotions like fear and surprise often co-occur, while others like joy and sadness rarely appear together.
+
+The evaluation of multi-label classification presents its own challenges. \cite{sorower2010literature} provided a comprehensive analysis of evaluation metrics for multi-label classification, demonstrating that different metrics capture different aspects of performance. In emotion detection, this is particularly important as system performance may vary significantly depending on whether one prioritizes precision, recall, or overall F1 score across emotions.
+
+\subsection{Multi-lingual NLP Models}
+
+Advances in multi-lingual NLP models have been crucial for developing systems that work across diverse languages. \cite{devlin2019bert} introduced multilingual BERT (mBERT), pre-trained on 104 languages, demonstrating surprisingly strong cross-lingual transfer abilities despite having no explicit cross-lingual objectives during pre-training. This work established the viability of single models serving multiple languages simultaneously.
+
+Building on these foundations, \cite{conneau2020unsupervised} developed XLM-RoBERTa, a cross-lingual model trained on 100 languages with 2.5 times more data than mBERT. Their extensive evaluations showed that scaling up multilingual pre-training significantly improves performance on downstream tasks across languages. Critically, they demonstrated that the "curse of multilinguality" (degradation in per-language performance as more languages are added) can be mitigated through increased model capacity and training data.
+
+For extremely low-resource languages, \cite{pfeiffer2020mad} introduced Adapter-based architectures that allow parameter-efficient fine-tuning for individual languages. Their MAD-X (Massively Multilingual Adapter-based Transfer) framework enables transfer to languages not seen during pre-training, which is particularly valuable for emotion detection in diverse linguistic contexts.
+
+Beyond model architecture, the creation of multilingual evaluation resources has been crucial for advancing the field. \cite{hu2020xtreme} introduced XTREME, a multi-lingual benchmark covering 40 languages and 9 tasks, providing a standardized way to evaluate multilingual models. Similarly, \cite{ruder2021xtreme} developed XTREME-R, an extension that addresses limitations in the original benchmark and includes more challenging language understanding tasks.
+
+Despite these advances, significant challenges remain in multilingual NLP. \cite{artetxe2020cross} conducted a critical evaluation of zero-shot cross-lingual transfer, showing that current approaches struggle with languages that are linguistically distant from high-resource ones. This limitation is particularly relevant for emotion detection, where cultural and linguistic differences significantly impact how emotions are expressed.
+
+Research by \cite{ponti2019modeling} on cross-lingual transfer for low-resource languages highlighted the importance of typological features in determining transfer effectiveness. They demonstrated that performance drops substantially when target languages have different morphological or syntactic structures from source languages, suggesting the need for language-specific adaptations in emotion detection systems.
+
+\cite{wu2020all} analyzed mBERT's performance across languages, showing a clear correlation between pre-training data size and downstream task performance. Their work underscores the continuing challenges for truly low-resource languages, where even state-of-the-art multilingual models may offer limited benefits without language-specific fine-tuning.
+
+\subsection{Retrieval-Augmented Generation (RAG)}
+
+Retrieval-Augmented Generation (RAG) has emerged as a powerful paradigm for enhancing language model capabilities with external knowledge. \cite{lewis2020retrieval} introduced the original RAG framework, combining dense retrieval with sequence-to-sequence models to generate outputs conditioned on relevant retrieved documents. Their approach demonstrated significant improvements over standard language models on knowledge-intensive tasks.
+
+While RAG was initially developed for generation tasks, its application to classification has shown promising results. \cite{mallen2023retrieval} adapted RAG for text classification, demonstrating that retrieved examples can serve as few-shot demonstrations to guide in-context learning. Their approach achieved competitive performance on various classification benchmarks without requiring task-specific fine-tuning.
+
+For multi-lingual contexts, \cite{shi2023replug} developed Cross-Lingual RAG, which leverages a shared dense retrieval space across languages to retrieve relevant documents for low-resource languages. This approach is particularly valuable for emotion detection across diverse languages, as it enables knowledge transfer from high-resource to low-resource languages.
+
+Recent innovations in RAG architectures have further improved performance. \cite{izacard2022atlas} introduced Atlas, a retrieval-augmented model that jointly learns to retrieve and generate, showing superior performance on knowledge-intensive tasks across 26 languages. Their work demonstrates the potential for end-to-end training of retrieval and generation components for multilingual applications.
+
+The selection of retrieved documents significantly impacts RAG performance. \cite{gao2023retrieval} introduced techniques for dynamic retrieval that adapt to the specific needs of each query, showing that adaptive retrieval strategies outperform static approaches. Similarly, \cite{yu2023improving} developed methods for filtering and re-ranking retrieved documents to ensure relevance and diversity, which is particularly important for capturing the range of emotional expressions across languages.
+
+In classification contexts, \cite{singh2022flare} demonstrated that RAG can mitigate the challenge of domain shift by retrieving examples similar to the test instance, regardless of their source domain. This capability is especially valuable for emotion detection, where emotional expressions may vary significantly across domains (e.g., social media vs. literary text) and languages.
+
+Despite these advances, challenges remain in applying RAG to multi-label classification. \cite{glass2022re} highlighted the difficulty of retrieving documents that cover all relevant labels for multi-label tasks, suggesting the need for specialized retrieval strategies that consider label co-occurrence patterns. Their work provides valuable insights for adapting RAG to multi-label emotion detection.
+
+\subsection{Few-shot Learning in NLP}
+
+Few-shot learning has become increasingly important for addressing data scarcity in NLP, particularly for low-resource languages. \cite{brown2020language} demonstrated the remarkable few-shot capabilities of large language models through in-context learning, where a model makes predictions based on a few examples provided in the prompt. This paradigm shift has significant implications for multi-lingual emotion detection, potentially reducing the need for extensive labeled data in each language.
+
+Building on this foundation, \cite{gao2021making} introduced the concept of "making pre-trained language models better few-shot learners" through prompt engineering and demonstration selection. Their work showed that carefully constructed prompts with strategically selected examples can dramatically improve few-shot performance on various NLP tasks, including classification.
+
+For more specialized applications, \cite{tunstall2022efficient} developed SetFit, a few-shot learning approach that combines contrastive learning with classification fine-tuning. By leveraging sentence transformers and efficient pair-wise training, SetFit achieves strong performance with as few as 8 examples per class, making it particularly suitable for low-resource scenarios in emotion detection.
+
+The selection of examples for few-shot learning significantly impacts performance. \cite{liu2022few} showed that retrieving examples based on semantic similarity to the test instance outperforms random selection, especially for complex tasks. Their work introduced a retrieval-based few-shot learning framework that adaptively selects the most relevant examples for each test instance, which is particularly valuable for capturing the contextual nature of emotions.
+
+Cross-lingual few-shot learning presents additional challenges. \cite{zhao2021multi} explored cross-lingual transfer in few-shot settings, demonstrating that examples from high-resource languages can effectively guide predictions in low-resource languages when properly aligned. Their approach leverages multilingual representations to bridge the gap between languages, offering insights for emotion detection in diverse linguistic contexts.
+
+Recent work has also explored the role of meta-learning in few-shot scenarios. \cite{wang2021meta} introduced a meta-learning framework for few-shot text classification that learns to adapt to new tasks with minimal examples. Their approach demonstrates significant improvements over traditional fine-tuning, particularly when the number of available examples is extremely limited.
+
+Despite these advances, few-shot learning in multi-label settings remains challenging. \cite{hou2022few} addressed this gap with a specialized few-shot learning approach for multi-label classification that captures label correlations even with limited examples. Their work offers valuable techniques for emotion detection, where understanding the relationships between emotions is crucial for accurate multi-label prediction.
+
+\subsection{Large Language Models in Emotion Detection}
+
+The emergence of large language models (LLMs) has transformed approaches to emotion detection. \cite{alhussain2021deep} provided a comprehensive survey of deep learning approaches for emotion detection, highlighting the shift from traditional feature-based methods to end-to-end neural approaches. Their review identified transformer-based models as the most promising direction for future research, foreshadowing the current dominance of LLMs.
+
+The in-context learning capabilities of LLMs have proven particularly valuable for emotion detection. \cite{wei2022chain} demonstrated through their "chain-of-thought" prompting approach that LLMs can reason about complex tasks when properly guided. Applied to emotion detection, this technique allows models to articulate the reasoning behind emotional classifications, potentially improving accuracy for subtle or mixed emotional expressions.
+
+For cross-lingual applications, \cite{winata2021language} showed that large multilingual language models can effectively transfer emotion detection capabilities across languages through careful prompt design. Their work demonstrated that providing examples in the target language significantly improves performance, even when the model's pre-training data for that language is limited.
+
+Recent work by \cite{zhang2023emotion} explored the potential of LLMs for zero-shot emotion detection, finding that models like GPT-4 can identify emotions without task-specific examples when given clear instructions. However, they also noted significant performance gaps across emotions and languages, highlighting the continuing challenges for universal emotion detection systems.
+
+The relationship between model size and emotion detection performance has been the subject of several studies. \cite{zhao2023survey} conducted a systematic evaluation of different-sized language models on emotion detection tasks, finding that while larger models generally perform better, the relationship is not linear, and proper prompt engineering can sometimes allow smaller models to match the performance of their larger counterparts.
+
+Beyond accuracy, recent research has focused on the interpretability of emotion detection systems. \cite{park2022social} introduced techniques for extracting explanations from LLMs regarding their emotion classifications, enhancing trust and providing insights into how these models understand emotional content. Their work demonstrates that LLMs can not only classify emotions but also articulate the textual cues that indicate specific emotional states.
+
+Despite these advances, challenges remain in applying LLMs to emotion detection across diverse languages and cultures. \cite{derczynski2022cultural} highlighted how cultural differences in emotion expression can lead to systematic biases in LLM-based emotion detection. Their work emphasizes the need for culturally-aware approaches that can adapt to different emotional expression patterns across languages and contexts.
+
+\subsection{Research Gaps and Opportunities}
+
+Our review of the literature reveals several important gaps that this thesis aims to address:
+
+\begin{enumerate}
+    \item \textbf{Limited Multi-lingual Coverage}: While significant progress has been made in multi-lingual NLP, emotion detection research has primarily focused on high-resource languages. Few studies have systematically evaluated approaches across a diverse set of languages spanning multiple language families.
+
+    \item \textbf{Lack of Comparative Analyses}: Most studies focus on a single approach (e.g., fine-tuning BERT or using LLMs), with limited comparative analyses of different paradigms on the same datasets. This makes it difficult to determine which approaches are most effective under different constraints.
+
+    \item \textbf{Retrieval-Augmented Classification}: While RAG has shown promise for generation tasks, its application to multi-label classification, particularly emotion detection, remains underexplored. The potential of combining retrieval with large language models for classification deserves further investigation.
+
+    \item \textbf{Low-Resource Adaptability}: Few studies have explicitly addressed how emotion detection approaches can be adapted for low-resource languages with minimal labeled data. This gap is particularly significant given the thousands of languages with limited NLP resources.
+
+    \item \textbf{Multi-label Emotion Detection}: Most emotion detection research treats emotions as independent categories, with limited exploration of approaches specifically designed to capture the complex co-occurrence patterns of multiple emotions.
+\end{enumerate}
 
 \section{Data}
 
