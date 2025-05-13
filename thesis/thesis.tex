@@ -1,0 +1,428 @@
+\documentclass[a4paper,12pt]{extarticle}
+\usepackage{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usepackage{pgf}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{indentfirst}
+\usepackage[
+backend=biber,
+style=numeric,
+maxbibnames=99
+]{biblatex}
+\addbibresource{refs.bib}
+\usepackage[colorlinks,citecolor=blue,linkcolor=blue,bookmarks=false,hypertexnames=true, urlcolor=blue]{hyperref} 
+\usepackage{indentfirst}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage[flushleft]{threeparttable}
+\usepackage{tablefootnote}
+
+\usepackage{chngcntr} % нумерация графиков и таблиц по секциям
+\counterwithin{table}{section}
+\counterwithin{figure}{section}
+
+\graphicspath{{graphics/}}%путь к рисункам
+
+\makeatletter
+% \renewcommand{\@biblabel}[1]{#1.} % Заменяем библиографию с квадратных скобок на точку:
+\makeatother
+
+\geometry{left=2.5cm}% левое поле
+\geometry{right=1.0cm}% правое поле
+\geometry{top=2.0cm}% верхнее поле
+\geometry{bottom=2.0cm}% нижнее поле
+\setlength{\parindent}{1.25cm}
+\renewcommand{\baselinestretch}{1.5} % междустрочный интервал
+
+
+\newcommand{\bibref}[3]{\hyperlink{#1}{#2 (#3)}} % biblabel, authors, year
+\addto\captionsrussian{\def\refname{Список литературы (или источников)}} 
+
+\renewcommand{\theenumi}{\arabic{enumi}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\labelenumi}{\arabic{enumi}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\theenumii}{.\arabic{enumii}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\labelenumii}{\arabic{enumi}.\arabic{enumii}.}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\theenumiii}{.\arabic{enumiii}}% Меняем везде перечисления на цифра.цифра
+\renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.}% Меняем везде перечисления на цифра.цифра
+
+\begin{document}
+\input{title_vkr}% это титульный лист - выберите подходящий вам из имеющихся в проекте вариантов (kr - курсовая работа у 3 курса, vkr - выпускная квалификационная работа у 4 курса)
+\newpage
+\setcounter{page}{2}
+
+{
+	\hypersetup{linkcolor=black}
+	\tableofcontents
+}
+
+\newpage
+
+\section*{Abstract}
+
+This thesis explores various approaches for multi-label emotion detection in text across multiple languages. We investigate traditional supervised approaches including BERT, SetFit, and Seq2Seq models, as well as a novel retrieval-augmented generation system called EmoRAG. Using the BRIGHTER dataset, which covers 28 languages including many low-resource ones, we demonstrate that our EmoRAG system achieves state-of-the-art performance without requiring extensive model training. This work contributes to the field of multilingual emotion recognition by providing a comparative analysis of different approaches and introducing an efficient, scalable method for detecting emotions across diverse languages.
+
+\addcontentsline{toc}{section}{Abstract}
+
+\section*{Keywords}
+Deep learning, emotion detection, multilingual NLP, retrieval-augmented generation, low-resource languages, multi-label classification
+
+\section{Introduction}
+
+Emotions are fundamental to human communication and experience, coloring our interactions, decisions, and perceptions. The ability to detect and understand emotions in text has become increasingly important in natural language processing (NLP), with applications spanning various domains. From customer service and mental health monitoring to social media analysis and human-computer interaction, automated emotion detection systems serve as valuable tools for understanding human sentiment at scale.
+
+\subsection{Context and Motivation}
+
+Over the past decade, emotion detection has emerged as a critical area of research within the broader field of affective computing. Unlike traditional sentiment analysis, which typically focuses on determining whether a text is positive, negative, or neutral, emotion detection aims to identify specific emotional states such as joy, sadness, anger, fear, surprise, and disgust. This fine-grained understanding of affective content enables more nuanced and human-like interactions between computational systems and users.
+
+The applications of emotion detection are diverse and impactful:
+
+\begin{itemize}
+\item \textbf{Customer Experience}: Identifying customer emotions in reviews, support tickets, and feedback can help businesses respond appropriately and improve services.
+\item \textbf{Mental Health Support}: Detecting emotional distress in text can support early intervention in mental health contexts and assist in monitoring well-being.
+\item \textbf{Content Recommendation}: Understanding the emotional impact of content can lead to more personalized recommendations in entertainment and media platforms.
+\item \textbf{Social Media Analysis}: Tracking emotional responses to events, products, or public figures provides valuable insights for marketing, policy-making, and crisis management.
+\item \textbf{Educational Technology}: Recognizing student emotions can help adaptive learning systems respond to frustration, confusion, or engagement.
+\end{itemize}
+
+Despite significant advances in this field, most emotion detection research and applications have focused primarily on high-resource languages, particularly English. This linguistic imbalance creates a significant gap in automated emotion understanding for the majority of the world's population who speak low-resource languages. As digital communication increasingly crosses linguistic boundaries, the need for emotion detection systems that work effectively across multiple languages becomes more pressing.
+
+\subsection{Problem Statement}
+
+The development of effective multi-lingual, multi-label emotion detection systems faces several interconnected challenges:
+
+\textbf{Linguistic Diversity}: Human languages vary dramatically in their lexical, syntactic, and semantic structures. These variations extend to how emotions are expressed, with some cultures having specific emotion concepts that lack direct translations in other languages. For instance, the German "Schadenfreude" (pleasure derived from another's misfortune) or the Portuguese "saudade" (a deep longing for something absent) represent culture-specific emotional concepts. Building systems that can recognize emotions across such diverse linguistic contexts requires approaches that can adapt to these variations.
+
+\textbf{Data Scarcity}: While high-resource languages like English benefit from abundant annotated data, most of the world's languages lack substantial labeled datasets for emotion detection. This data scarcity makes it difficult to train robust models for these languages, particularly when using traditional supervised learning approaches that rely on large amounts of labeled data.
+
+\textbf{Multi-label Complexity}: Emotions often co-occur, with texts frequently expressing multiple emotions simultaneously. This multi-label nature adds complexity to both model architecture and evaluation, requiring methods that can effectively capture relationships between emotions rather than treating them as mutually exclusive categories.
+
+\textbf{Cross-cultural Variations}: The expression and interpretation of emotions vary significantly across cultures, affecting how emotions are verbalized in different languages. These cultural differences present challenges for creating universally applicable emotion detection systems.
+
+\textbf{Computational Efficiency}: Training separate models for each language is computationally expensive and impractical, especially given the thousands of languages spoken worldwide. More efficient approaches are needed to make multi-lingual emotion detection accessible and scalable.
+
+Addressing these challenges requires innovative approaches that can operate effectively with limited labeled data, adapt to linguistic and cultural differences, and handle the inherent complexity of multi-label emotion classification.
+
+\subsection{Research Questions}
+
+This thesis investigates several key research questions that guide our exploration of multi-lingual, multi-label emotion detection:
+
+\begin{enumerate}
+\item \textbf{How do traditional supervised approaches compare to retrieval-augmented approaches in emotion detection?}
+   We examine whether newer paradigms like retrieval-augmented generation can outperform traditional fine-tuning approaches for emotion detection tasks. This comparison explores the trade-offs between parameter-efficient methods that leverage in-context learning and approaches that require extensive model training.
+
+\item \textbf{How can we effectively handle emotion detection in low-resource languages?}
+   We investigate techniques that can transfer knowledge from high-resource to low-resource languages, as well as methods that can perform well with minimal labeled examples. This question addresses the practical challenge of developing emotion detection systems for the majority of the world's languages, which lack extensive training data.
+
+\item \textbf{What are the specific challenges in multi-label emotion detection, and how can they be addressed?}
+   We explore the complexities of detecting multiple co-occurring emotions in text and evaluate different strategies for handling these interdependencies. This includes examining how the relationships between emotions can be modeled effectively across different languages and cultural contexts.
+
+\item \textbf{How do different retrieval mechanisms affect the performance of retrieval-augmented generation for emotion detection?}
+   We investigate how various retrieval strategies impact the quality of emotion detection, particularly when operating across diverse languages with varying levels of resource availability.
+
+\item \textbf{What is the impact of model ensemble and aggregation strategies on multi-lingual emotion detection performance?}
+   We examine how combining predictions from multiple models using different aggregation techniques can improve performance and robustness across languages and emotion categories.
+\end{enumerate}
+
+\subsection{Contributions}
+
+This thesis makes several significant contributions to the field of multi-lingual emotion detection:
+
+\begin{enumerate}
+\item \textbf{Comprehensive Evaluation of Multiple Approaches}: We provide a systematic comparison of four distinct approaches to multi-lingual, multi-label emotion detection: BERT-based fine-tuning, SetFit few-shot learning, Seq2Seq generative models, and our novel EmoRAG system. This comparison offers insights into the strengths and limitations of each approach across different languages and emotion categories.
+
+\item \textbf{Development of EmoRAG}: We introduce EmoRAG (Emotion Recognition with Retrieval-Augmented Generation), a novel system that combines retrieval mechanisms with large language models to perform emotion detection without requiring model fine-tuning. EmoRAG demonstrates how retrieval-augmented generation can be effectively applied to multi-label classification tasks across multiple languages.
+
+\item \textbf{Novel Retrieval and Aggregation Strategies}: We develop and evaluate multiple retrieval mechanisms (n-gram and embedding-based) and aggregation strategies (including label-specific weighted voting) that significantly enhance the performance of multi-lingual emotion detection, particularly for low-resource languages.
+
+\item \textbf{Extensive Experimental Analysis}: We conduct a comprehensive analysis of performance across 28 languages with varying resource availability, providing valuable insights into cross-lingual transfer, language family effects, and the specific challenges of low-resource languages.
+
+\item \textbf{Practical Framework for Multi-lingual NLP}: Beyond emotion detection, our work contributes a framework for approaching other multi-lingual NLP tasks, particularly in settings where labeled data is limited and linguistic diversity is high.
+\end{enumerate}
+
+\subsection{Thesis Structure}
+
+The remainder of this thesis is organized as follows:
+
+\textbf{Chapter 2: Related Work} provides a comprehensive review of previous research in emotion detection, multi-label classification, multi-lingual NLP models, retrieval-augmented generation, few-shot learning, and the application of large language models to emotion detection tasks.
+
+\textbf{Chapter 3: Data} describes the BRIGHTER dataset, including its creation, annotation process, composition, and the specific challenges it presents for multi-lingual emotion detection.
+
+\textbf{Chapter 4: Methodology} presents the four approaches we explored: BERT-based fine-tuning, SetFit few-shot learning, Seq2Seq generative models, and our novel EmoRAG system. Each approach is described in detail, including model architecture, training procedures, and implementation specifics.
+
+\textbf{Chapter 5: Experiments} outlines our experimental setup, evaluation metrics, and hyperparameter tuning strategies for each approach.
+
+\textbf{Chapter 6: Results} presents a comprehensive analysis of our experimental findings, including overall performance comparisons, language-specific analyses, emotion-specific evaluations, and ablation studies.
+
+\textbf{Chapter 7: Discussion} interprets our results, comparing the strengths and weaknesses of each approach, analyzing performance on low-resource languages, and examining common error patterns.
+
+\textbf{Chapter 8: Conclusion and Future Work} summarizes our key findings, acknowledges limitations, and suggests promising directions for future research in multi-lingual emotion detection.
+
+The thesis concludes with \textbf{References} and \textbf{Appendices} that provide additional details on prompt templates, hyperparameters, supplementary results, and implementation code.
+
+\section{Related Work}
+
+This chapter reviews the existing literature relevant to multi-lingual, multi-label emotion detection. We examine six key areas: traditional approaches to emotion detection, multi-label classification techniques, multi-lingual NLP models, retrieval-augmented generation systems, few-shot learning in NLP, and the application of large language models to emotion detection tasks.
+
+\subsection{Emotion Detection in Text}
+
+Emotion detection in text has evolved significantly over the past two decades, from lexicon-based approaches to sophisticated neural models. Early work by Strapparava and Mihalcea (2007) introduced one of the first datasets for emotion recognition in English text, defining the task as detecting Ekman's six basic emotions: joy, sadness, anger, fear, surprise, and disgust. This work established the foundation for most subsequent research in the field and remains influential in how emotions are categorized in computational approaches.
+
+Lexicon-based methods were among the first approaches to emotion detection. Mohammad and Turney (2013) developed the NRC Emotion Lexicon, mapping English words to eight emotions and two sentiments. Subsequent work by Thelwall et al. (2010) with SentiStrength provided methods for detecting emotion intensity, showing that strength of emotion can be accurately detected from text. While lexicon-based methods offer interpretability and language-specific insights, they struggle with contextual understanding and require extensive manual annotation for each language.
+
+Supervised machine learning techniques dominated the next wave of emotion detection research. Work by Balahur et al. (2013) demonstrated the effectiveness of Support Vector Machines (SVMs) with careful feature engineering for emotion classification. In their comprehensive evaluation, they showed that n-gram features with term frequency-inverse document frequency (TF-IDF) weighting could accurately distinguish between emotion categories. Similarly, Colneriĉ and Demsar (2018) applied ensemble methods across multiple datasets, highlighting the importance of combining different classification strategies for robust emotion detection.
+
+The deep learning era brought significant advances to emotion detection. Felbo et al. (2017) introduced DeepMoji, which leveraged distant supervision from emojis to pre-train models for emotion recognition. Their approach demonstrated the power of large-scale pre-training on naturally occurring emotional signals. Building on this idea, Abdul-Mageed and Ungar (2017) developed large-scale Twitter-specific models for emotion detection, showing that domain-specific pre-training significantly improves performance.
+
+\section{Data}
+
+\subsection{Data Splits}
+
+We utilized the official BRIGHTER dataset splits for our experiments:
+
+\begin{itemize}
+\item \textbf{Training Set}: $\sim$70\% of the data, used for model training
+\item \textbf{Validation Set}: $\sim$15\% of the data, used for hyperparameter tuning and early stopping
+\item \textbf{Test Set}: $\sim$15\% of the data, used for final evaluation
+\item \textbf{Development Set}: A special subset combining portions of training and validation sets, used for few-shot example selection
+\end{itemize}
+
+For low-resource languages, we ensured careful stratification to maintain representative distributions of emotions in all splits.
+
+\subsection{Data Challenges and Considerations}
+
+Working with the BRIGHTER dataset presented several challenges that informed our approach:
+
+\subsubsection{Linguistic Diversity}
+
+The extreme linguistic diversity of BRIGHTER requires models that can generalize across typologically distinct languages. This diversity includes differences in:
+\begin{itemize}
+\item Morphological complexity (from isolating to highly synthetic languages)
+\item Syntactic structure (varying word orders)
+\item Script systems (Latin, Cyrillic, Arabic, Devanagari, etc.)
+\item Lexical resources for expressing emotions
+\end{itemize}
+
+\subsubsection{Data Imbalance}
+
+The dataset exhibits multiple dimensions of imbalance:
+\begin{itemize}
+\item Varying amounts of data per language
+\item Uneven distribution of emotion labels
+\item Differences in the prevalence of multi-label instances
+\item Varying text lengths and sources across languages
+\end{itemize}
+
+\subsubsection{Cultural Differences in Emotion Expression}
+
+Emotion expression varies significantly across cultures, affecting how emotions are verbalized in different languages. These differences include:
+\begin{itemize}
+\item Culture-specific emotion concepts without direct translations
+\item Varying tendencies toward emotional explicitness or implicitness
+\item Different metaphorical expressions for emotions
+\item Culturally specific emotional associations
+\end{itemize}
+
+\subsubsection{Annotation Consistency}
+
+Despite careful guidelines, some variation in annotation practices across languages is inevitable. This includes:
+\begin{itemize}
+\item Differences in threshold for assigning certain emotion labels
+\item Variation in intensity rating calibration
+\item Cultural differences in emotion perception affecting annotation
+\end{itemize}
+
+These challenges informed our decision to explore both traditional supervised approaches and more flexible retrieval-augmented methods that might better adapt to the diverse nature of the dataset.
+
+\section{Methodology}
+
+This chapter presents the various approaches we explored for multi-lingual, multi-label emotion detection using the BRIGHTER dataset. We investigate both traditional supervised learning approaches (BERT, SetFit, and Seq2Seq) and a novel retrieval-augmented generation (RAG) approach called EmoRAG. Each approach represents a different paradigm in machine learning for text classification:
+
+\begin{enumerate}
+\item \textbf{BERT-based Approach}: Fine-tune a pre-trained language model with a classification head for multi-label prediction
+\item \textbf{SetFit Approach}: A few-shot learning technique that combines contrastive learning with standard classification techniques
+\item \textbf{Seq2Seq Approach}: Framing emotion detection as a text generation task
+\item \textbf{EmoRAG System}: A novel retrieval-augmented generation system that leverages few-shot learning without parameter updates
+\end{enumerate}
+
+Figure 4.1 provides an overview of the methodological approaches explored in this thesis.
+
+[Figure 4.1: Overview of methodological approaches for multi-lingual emotion detection. Create a diagram showing the four approaches side by side with their main components.]
+
+The following sections describe each approach in detail, including model architecture, training procedures, and implementation specifics.
+
+\subsection{BERT-based Approach}
+
+\begin{lstlisting}[language=Python]
+# Model initialization
+model = AutoModelForSequenceClassification.from_pretrained(
+    config.checkpoint_path, 
+    num_labels=len(datasets_labels),
+    problem_type="multi_label_classification"
+)
+
+# Training arguments
+training_args = TrainingArguments(
+    output_dir=output_dir,
+    load_best_model_at_end=True,
+    metric_for_best_model="eval_loss",
+    save_strategy="epoch",
+    evaluation_strategy="epoch",
+    learning_rate=2e-5,
+    per_device_train_batch_size=16,
+    weight_decay=0.01,
+    num_train_epochs=10
+)
+\end{lstlisting}
+
+For prediction, we apply a sigmoid function to the model outputs and use a threshold of 0.5 to convert probabilities to binary predictions:
+
+\begin{lstlisting}[language=Python]
+probabilities = torch.sigmoid(torch.tensor(predictions)).numpy()
+binary_predictions = probabilities > 0.5
+\end{lstlisting}
+
+Performance is evaluated using F1-micro and F1-macro metrics, which are particularly suitable for multi-label classification with imbalanced classes.
+
+The BERT-based approach provides a strong baseline for emotion detection, leveraging the powerful contextual representations of transformer models. However, it requires substantial computational resources for training and may struggle with low-resource languages where pre-training data is limited.
+
+\subsection{SetFit Approach}
+
+SetFit (Sentence Transformer Fine-tuning) is a novel few-shot learning method introduced by Tunstall et al. (2022) that combines contrastive learning with standard classification techniques. It was designed to achieve strong performance with limited labeled data, making it particularly suitable for multi-lingual emotion detection where labeled examples may be scarce for low-resource languages.
+
+\subsubsection{SetFit Overview}
+
+The SetFit approach consists of two main stages:
+
+\begin{enumerate}
+\item \textbf{Contrastive Learning Stage}: Fine-tune a sentence transformer model using contrastive learning on sentence pairs derived from labeled examples.
+\item \textbf{Classification Stage}: Train a classifier (typically a linear model) on the embeddings produced by the fine-tuned sentence transformer.
+\end{enumerate}
+
+Figure 4.3 illustrates the SetFit training process.
+
+[Figure 4.3: SetFit training process showing the two-stage approach. The diagram should include the contrastive learning phase with sentence pairs and the classification head training phase. Reference: https://github.com/huggingface/setfit/raw/main/assets/diagram.png]
+
+The key innovation of SetFit is its ability to leverage the power of sentence transformers for few-shot learning without requiring extensive labeled data or computationally expensive prompt-based approaches. By fine-tuning the sentence embeddings directly on the task-specific data, SetFit can adapt pre-trained embeddings to better represent the nuances of emotion detection across languages.
+
+\subsubsection{Multi-target Strategies}
+
+Adapting SetFit to multi-label classification presents unique challenges, as the original method was designed for single-label classification. We explored three strategies for handling multiple emotion labels:
+
+\begin{enumerate}
+\item \textbf{Multi-output Strategy}: Train a single classifier that outputs multiple binary predictions, one for each emotion label. This approach treats each emotion independently but allows the model to learn correlations between them.
+
+\item \textbf{Classifier Chain Strategy}: Train multiple classifiers in a chain, where each classifier takes as input both the sentence embedding and the predictions of previous classifiers in the chain. This approach explicitly models dependencies between emotions.
+
+\item \textbf{One-vs-Rest Strategy}: Train separate binary classifiers for each emotion label. This approach is the simplest but ignores potential correlations between emotions.
+\end{enumerate}
+
+Figure 4.4 visualizes these three strategies for multi-label classification with SetFit.
+
+\section{Experiments}
+
+\subsection{Experimental Setup}
+\begin{itemize}
+\item \textbf{Hardware and Software}: Details on the implementation environment
+\item \textbf{Model Configurations}: Specific parameters for each approach
+\item \textbf{Training Process}: Time, resources, and optimization techniques
+\item \textbf{Cross-validation}: Strategies for ensuring robust evaluation
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+\begin{itemize}
+\item \textbf{F1-micro and F1-macro}: Definition and justification
+\item \textbf{Language-specific Evaluation}: How performance is assessed across languages
+\item \textbf{Emotion-specific Metrics}: Evaluation for each emotion category
+\end{itemize}
+
+\subsection{Hyperparameter Tuning}
+\begin{itemize}
+\item \textbf{BERT Hyperparameters}: Learning rates, batch sizes, etc.
+\item \textbf{SetFit Hyperparameters}: Sampling strategies, example counts, etc.
+\item \textbf{Seq2Seq Hyperparameters}: Beam width, repetition penalty, etc.
+\item \textbf{EmoRAG Hyperparameters}: Example counts, retrieval mechanisms, etc.
+\end{itemize}
+
+\section{Results}
+
+\subsection{Overall Performance}
+\begin{itemize}
+\item \textbf{Comparative Analysis}: Performance of all approaches
+\item \textbf{Statistical Significance}: Analysis of performance differences
+\item \textbf{Efficiency Comparison}: Training time, inference time, and resource requirements
+\end{itemize}
+
+\subsection{Performance by Language}
+\begin{itemize}
+\item \textbf{High-resource vs. Low-resource Languages}: Analysis of performance differences
+\item \textbf{Language Family Analysis}: Patterns across related languages
+\item \textbf{Cross-lingual Transfer}: Evidence of knowledge transfer between languages
+\end{itemize}
+
+\subsection{Performance by Emotion}
+\begin{itemize}
+\item \textbf{Emotion-specific Analysis}: Differences in detection accuracy by emotion
+\item \textbf{Co-occurrence Patterns}: Analysis of multi-label predictions
+\item \textbf{Confusion Analysis}: Common misclassifications between emotions
+\end{itemize}
+
+\subsection{Ablation Studies}
+\begin{itemize}
+\item \textbf{EmoRAG Components}: Impact of different retrievers, generators, and aggregation strategies
+\item \textbf{Example Count Analysis}: Performance vs. number of examples
+\item \textbf{Cross-model Analysis}: Contribution of different LLMs to the ensemble
+\end{itemize}
+
+\section{Discussion}
+
+\subsection{Comparison of Approaches}
+\begin{itemize}
+\item \textbf{Strengths and Weaknesses}: Analysis of each approach
+\item \textbf{Resource Efficiency}: Trade-offs between performance and computational requirements
+\item \textbf{Practical Considerations}: Deployment scenarios for different approaches
+\end{itemize}
+
+\subsection{Performance on Low-resource Languages}
+\begin{itemize}
+\item \textbf{Challenges}: Specific issues in low-resource settings
+\item \textbf{Transfer Learning Effects}: How well knowledge transfers to low-resource languages
+\item \textbf{Retrieval Benefits}: How retrieval mechanisms help in low-resource scenarios
+\end{itemize}
+
+\subsection{Error Analysis}
+\begin{itemize}
+\item \textbf{Common Error Patterns}: Analysis of misclassifications
+\item \textbf{Language-specific Challenges}: Linguistic factors affecting performance
+\item \textbf{Cultural Factors}: Impact of cultural differences on emotion expression and detection
+\end{itemize}
+
+\section{Conclusion and Future Work}
+\begin{itemize}
+\item \textbf{Summary of Findings}: Key takeaways from the research
+\item \textbf{Limitations}: Constraints and shortcomings of the current approaches
+\item \textbf{Future Research Directions}: Promising avenues for further investigation
+\item \textbf{Broader Impacts}: Potential applications and implications of the work
+\end{itemize}
+
+\printbibliography
+
+\section*{Appendices}
+\begin{itemize}
+\item \textbf{A. Prompt Templates}: Complete prompts used for LLMs
+\item \textbf{B. Hyperparameter Details}: Comprehensive listing of all parameters
+\item \textbf{C. Additional Results}: Supplementary tables and figures
+\item \textbf{D. Implementation Code}: Links to code repositories
+\end{itemize}
+
+\end{document}
