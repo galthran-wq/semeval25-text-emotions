@@ -168,64 +168,58 @@ Our review of the literature reveals several important gaps that this thesis aim
 \end{enumerate}
 
 \section{Data}
+\subsection{Overview}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{brighter_languages.png}
+    \caption{Languages in the BRIGHTER dataset}
+    \label{fig:brighter_languages}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{brighter_examples.png}
+    \caption{Examples from the BRIGHTER dataset}
+    \label{fig:brighter_examples}
+\end{figure}
+
+The BRIGHTER dataset \cite{muhammad2025brighterbridginggaphumanannotated} is a comprehensive, multi-labeled, multilingual resource for textual emotion recognition, consisting of over 100,000 annotated examples across 28 languages and 7 language families. Designed to address the stark resource imbalance in emotion research, BRIGHTER prioritizes low-resource languages from Africa, Asia, Eastern Europe, and Latin America, while also including mid- and high-resource languages such as English, German, and Portuguese.
+
+Each instance in BRIGHTER is manually annotated by fluent speakers, with annotations covering six core perceived emotions — \textit{joy}, \textit{sadness}, \textit{anger}, \textit{fear}, \textit{surprise}, and \textit{disgust} — and includes an additional \textit{neutral} label when no emotion is expressed. Annotations are multi-label and span four emotion intensity levels (0 to 3).
+
+The dataset aggregates data from diverse sources, including social media platforms (e.g., Reddit, YouTube, Weibo), speeches, literature, news, and even machine-generated examples with human post-editing. A detailed breakdown of these sources, annotator counts, and splits per language is given in the original BRIGHTER paper, with representative examples shown in Figure~\ref{fig:brighter_examples} and the language family distribution illustrated in Figure~\ref{fig:brighter_languages}.
 
 \subsection{Data Splits}
-
-We utilized the official BRIGHTER dataset splits for our experiments:
+We use the official BRIGHTER dataset splits for all experiments:
 
 \begin{itemize}
-\item \textbf{Training Set}: $\sim$70\% of the data, used for model training
-\item \textbf{Validation Set}: $\sim$15\% of the data, used for hyperparameter tuning and early stopping
-\item \textbf{Test Set}: $\sim$15\% of the data, used for final evaluation
-\item \textbf{Development Set}: A special subset combining portions of training and validation sets, used for few-shot example selection
+\item \textbf{Training Set}: Approximately 70\% of the data, used for supervised model training.
+\item \textbf{Validation Set}: Approximately 15\% of the data, used for early stopping and hyperparameter tuning.
+\item \textbf{Test Set}: Approximately 15\% of the data, reserved for final evaluation.
+\item \textbf{Development Set}: A curated subset drawn from training and validation sets, used to construct few-shot examples.
 \end{itemize}
 
-For low-resource languages, we ensured careful stratification to maintain representative distributions of emotions in all splits.
+To ensure fair evaluation across the linguistic spectrum, we applied stratified sampling for low-resource languages, preserving both emotion and language distributions during splitting.
 
-\subsection{Data Challenges and Considerations}
+\subsection{Dataset Challenges}
 
-Working with the BRIGHTER dataset presented several challenges that informed our approach:
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{brighter_label_distribution.png}
+    \caption{Label distribution in the BRIGHTER dataset}
+    \label{fig:brighter_label_distribution}
+\end{figure}
 
-\subsubsection{Linguistic Diversity}
+While BRIGHTER is a rich and diverse resource, it also introduces several challenges that motivated our modeling choices:
 
-The extreme linguistic diversity of BRIGHTER requires models that can generalize across typologically distinct languages. This diversity includes differences in:
-\begin{itemize}
-\item Morphological complexity (from isolating to highly synthetic languages)
-\item Syntactic structure (varying word orders)
-\item Script systems (Latin, Cyrillic, Arabic, Devanagari, etc.)
-\item Lexical resources for expressing emotions
-\end{itemize}
+Label Distribution: The dataset exhibits long-tailed distributions for both emotions and languages, as illustrated in Figure~\ref{fig:brighter_label_distribution}. Some languages lack examples for certain emotions (e.g., no \textit{disgust} in English, no \textit{surprise} in Afrikaans), and neutral examples vary greatly in frequency.
 
-\subsubsection{Data Imbalance}
+Linguistic Coverage: BRIGHTER spans typologically diverse languages with varying scripts (Latin, Arabic, Devanagari, Cyrillic), making it a strong benchmark for cross-lingual generalization.
 
-The dataset exhibits multiple dimensions of imbalance:
-\begin{itemize}
-\item Varying amounts of data per language
-\item Uneven distribution of emotion labels
-\item Differences in the prevalence of multi-label instances
-\item Varying text lengths and sources across languages
-\end{itemize}
+Annotation Density: Most languages have between 3 and 10 annotators per example, but annotation intensity and agreement levels vary. Final labels were aggregated using a combination of per-emotion thresholding and average intensity, ensuring consistent quality across languages.
 
-\subsubsection{Cultural Differences in Emotion Expression}
-
-Emotion expression varies significantly across cultures, affecting how emotions are verbalized in different languages. These differences include:
-\begin{itemize}
-\item Culture-specific emotion concepts without direct translations
-\item Varying tendencies toward emotional explicitness or implicitness
-\item Different metaphorical expressions for emotions
-\item Culturally specific emotional associations
-\end{itemize}
-
-\subsubsection{Annotation Consistency}
-
-Despite careful guidelines, some variation in annotation practices across languages is inevitable. This includes:
-\begin{itemize}
-\item Differences in threshold for assigning certain emotion labels
-\item Variation in intensity rating calibration
-\item Cultural differences in emotion perception affecting annotation
-\end{itemize}
-
-These challenges informed our decision to explore both traditional supervised approaches and more flexible retrieval-augmented methods that might better adapt to the diverse nature of the dataset.
+These considerations led us to explore both supervised and retrieval-augmented methods, with the aim of improving generalization under low-resource, high-diversity conditions.
 
 \section{Methodology}
 
