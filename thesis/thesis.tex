@@ -238,22 +238,39 @@ The following sections describe each approach in detail, including model archite
 
 For prediction, we apply a sigmoid function to the model outputs and use a threshold of 0.5 to convert probabilities to binary predictions:
 
-Performance is evaluated using F1-micro and F1-macro metrics, which are particularly suitable for multi-label classification with imbalanced classes.
-
 The BERT-based approach provides a strong baseline for emotion detection, leveraging the powerful contextual representations of transformer models. However, it may struggle with low-resource languages where pre-training data is limited.
+
+\subsection{Seq2Seq Approach}
+
+The Seq2Seq approach reframes multi-label emotion detection as a text generation task, where the model generates a comma-separated list of emotions present in the input text. This approach leverages the generative capabilities of encoder-decoder transformer models to directly produce structured outputs rather than independent binary classifications.
+
+This approach is particularly interesting because of the large number of available pre-trained encoder-decoder models.
+
+Some examples of pre-trained encoder-decoder models are:
+
+\textbf{mT5} \cite{xue2021mt5massivelymultilingualpretrained}: A multilingual variant of T5 (Text-to-Text Transfer Transformer) pre-trained on 101 languages. 
+
+\textbf{BART} \cite{lewis2019bartdenoisingsequencetosequencepretraining}: A denoising autoencoder for pretraining sequence-to-sequence models. 
+
+\textbf{mBART} \cite{liu2020multilingualdenoisingpretrainingneural}: A multilingual sequence-to-sequence denoising auto-encoder pre-trained on 25 languages.
+
+The Seq2Seq approach transforms the multi-label classification problem into a text generation task:
+
+\textbf{Input}: The original text to be classified. 
+
+\textbf{Output}: A comma-separated list of emotion labels present in the text (e.g., "joy,surprise,fear").
+
+This format allows the model to learn the relationships between emotions naturally through the generation process, potentially capturing label co-occurrences and dependencies more effectively than independent binary classifiers.
 
 \subsection{SetFit Approach}
 
 SetFit (Sentence Transformer Fine-tuning) is a novel few-shot learning method introduced by \cite{tunstall2022efficient} that combines contrastive learning with standard classification techniques. It was designed to achieve strong performance with limited labeled data, making it particularly suitable for multi-lingual emotion detection where labeled examples may be scarce for low-resource languages.
 
-\subsubsection{SetFit Overview}
+The SetFit approach involves two stages. 
 
-The SetFit approach consists of two main stages:
+The first stage is the \textbf{Contrastive Learning Stage}, where a sentence transformer model is fine-tuned using contrastive learning on sentence pairs derived from labeled examples. 
 
-\begin{enumerate}
-\item \textbf{Contrastive Learning Stage}: Fine-tune a sentence transformer model using contrastive learning on sentence pairs derived from labeled examples.
-\item \textbf{Classification Stage}: Train a classifier (typically a linear model) on the embeddings produced by the fine-tuned sentence transformer.
-\end{enumerate}
+The second stage is the \textbf{Classification Stage}, where a classifier, typically a linear model, is trained on the embeddings produced by the fine-tuned sentence transformer.
 
 Figure~\ref{fig:setfit_training} illustrates the SetFit training process.
 
@@ -294,7 +311,7 @@ The EmoRAG architecture follows a four-stage pipeline, illustrated in Figure~\re
 We experimented with two retrieval strategies:
 \begin{itemize}
 \item \textbf{N-gram Overlap}: Particularly effective for low-resource languages, this method retrieves examples based on surface lexical similarity.
-\item \textbf{Embedding-based Retrieval (BGE-M3)}: A dense vector retriever using sentence-level embeddings that supports multilingual representations.
+\item \textbf{Embedding-based Retrieval}: A dense vector retriever using sentence-level embeddings that supports multilingual representations. For our experiments, we used the BGE-M3 embedding model \cite{chen2024bgem3embeddingmultilingualmultifunctionality}, which achieved state-of-the-art performance on the multilingual subset of the MTEB benchmark \cite{muennighoff2023mtebmassivetextembedding}.
 \end{itemize}
 
 The number of retrieved samples K is fixed per language type: 30 for low-resource languages and 100 for high-resource ones.
@@ -302,12 +319,7 @@ The number of retrieved samples K is fixed per language type: 30 for low-resourc
 \subsubsection{Generator Models}
 
 For generation, EmoRAG uses a diverse ensemble of LLMs including:
-\begin{itemize}
-\item \texttt{Llama-3.1-70B}
-\item \texttt{Qwen2.5-72B-Instruct}
-\item \texttt{Gemma-2-27B-it}
-\item \texttt{GPT-4o-mini}
-\end{itemize}
+\texttt{Llama-3.1-70B \cite{grattafiori2024llama3herdmodels}}, \texttt{Qwen2.5-72B-Instruct \cite{yang2024qwen2technicalreport}}, \texttt{Gemma-2-27B-it \cite{gemmateam2024gemma2improvingopen}}, \texttt{GPT-4o-mini \cite{openai2024gpt4omini}}
 Each LLM receives the same prompt structure, written in English and formatted to generate emotion predictions in JSON format:
 \begin{verbatim}
 {
@@ -322,15 +334,17 @@ Each LLM receives the same prompt structure, written in English and formatted to
 
 \subsubsection{Aggregation Strategies}
 
-To aggregate predictions from multiple LLMs, we evaluate five strategies:
-\begin{itemize}
-\item \textbf{Single model} output (e.g., GPT-4o-mini)
-\item \textbf{Majority Vote}
-\item \textbf{Macro/Micro-F1 Weighted Voting}
-\item \textbf{Label-specific F1 Voting} – the most successful method in our experiments
-\item \textbf{LLM-based Aggregation} – using one LLM to aggregate others’ outputs
-\end{itemize}
+To aggregate predictions from multiple LLMs, we evaluate five strategies. 
 
+The \textbf{Single model} approach simply uses predictions from one LLM (e.g., GPT-4o-mini) without any aggregation. 
+
+\textbf{Majority Vote} gives each model an equal vote for each emotion label, with the final prediction determined by the majority decision (threshold > 0.5). 
+
+In \textbf{Macro/Micro-F1 Weighted Voting}, models' votes are weighted by their macro or micro F1 scores on the validation set for the specific language, giving more influence to better-performing models. 
+
+\textbf{Label-specific F1 Voting} weights each model's vote by its F1 score for the specific emotion label and language, allowing models with higher performance on particular emotions to have more influence on those predictions. 
+
+Finally, \textbf{LLM-based Aggregation} uses one LLM to analyze and aggregate the outputs from other models, potentially capturing more nuanced patterns in the predictions.
 
 \section{Experiments}
 
