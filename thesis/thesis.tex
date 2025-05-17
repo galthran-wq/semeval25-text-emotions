@@ -232,50 +232,19 @@ This chapter presents the various approaches we explored for multi-lingual, mult
 \item \textbf{EmoRAG System}: A novel retrieval-augmented generation system that leverages few-shot learning without parameter updates
 \end{enumerate}
 
-Figure 4.1 provides an overview of the methodological approaches explored in this thesis.
-
-[Figure 4.1: Overview of methodological approaches for multi-lingual emotion detection. Create a diagram showing the four approaches side by side with their main components.]
-
 The following sections describe each approach in detail, including model architecture, training procedures, and implementation specifics.
 
 \subsection{BERT-based Approach}
 
-\begin{lstlisting}[language=Python]
-# Model initialization
-model = AutoModelForSequenceClassification.from_pretrained(
-    config.checkpoint_path, 
-    num_labels=len(datasets_labels),
-    problem_type="multi_label_classification"
-)
-
-# Training arguments
-training_args = TrainingArguments(
-    output_dir=output_dir,
-    load_best_model_at_end=True,
-    metric_for_best_model="eval_loss",
-    save_strategy="epoch",
-    evaluation_strategy="epoch",
-    learning_rate=2e-5,
-    per_device_train_batch_size=16,
-    weight_decay=0.01,
-    num_train_epochs=10
-)
-\end{lstlisting}
-
 For prediction, we apply a sigmoid function to the model outputs and use a threshold of 0.5 to convert probabilities to binary predictions:
-
-\begin{lstlisting}[language=Python]
-probabilities = torch.sigmoid(torch.tensor(predictions)).numpy()
-binary_predictions = probabilities > 0.5
-\end{lstlisting}
 
 Performance is evaluated using F1-micro and F1-macro metrics, which are particularly suitable for multi-label classification with imbalanced classes.
 
-The BERT-based approach provides a strong baseline for emotion detection, leveraging the powerful contextual representations of transformer models. However, it requires substantial computational resources for training and may struggle with low-resource languages where pre-training data is limited.
+The BERT-based approach provides a strong baseline for emotion detection, leveraging the powerful contextual representations of transformer models. However, it may struggle with low-resource languages where pre-training data is limited.
 
 \subsection{SetFit Approach}
 
-SetFit (Sentence Transformer Fine-tuning) is a novel few-shot learning method introduced by Tunstall et al. (2022) that combines contrastive learning with standard classification techniques. It was designed to achieve strong performance with limited labeled data, making it particularly suitable for multi-lingual emotion detection where labeled examples may be scarce for low-resource languages.
+SetFit (Sentence Transformer Fine-tuning) is a novel few-shot learning method introduced by \cite{tunstall2022efficient} that combines contrastive learning with standard classification techniques. It was designed to achieve strong performance with limited labeled data, making it particularly suitable for multi-lingual emotion detection where labeled examples may be scarce for low-resource languages.
 
 \subsubsection{SetFit Overview}
 
@@ -286,25 +255,82 @@ The SetFit approach consists of two main stages:
 \item \textbf{Classification Stage}: Train a classifier (typically a linear model) on the embeddings produced by the fine-tuned sentence transformer.
 \end{enumerate}
 
-Figure 4.3 illustrates the SetFit training process.
+Figure~\ref{fig:setfit_training} illustrates the SetFit training process.
 
-[Figure 4.3: SetFit training process showing the two-stage approach. The diagram should include the contrastive learning phase with sentence pairs and the classification head training phase. Reference: https://github.com/huggingface/setfit/raw/main/assets/diagram.png]
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{setfit.png}
+    \caption{SetFit training process}
+    \label{fig:setfit_training}
+\end{figure}
 
 The key innovation of SetFit is its ability to leverage the power of sentence transformers for few-shot learning without requiring extensive labeled data or computationally expensive prompt-based approaches. By fine-tuning the sentence embeddings directly on the task-specific data, SetFit can adapt pre-trained embeddings to better represent the nuances of emotion detection across languages.
 
-\subsubsection{Multi-target Strategies}
+\subsection{EmoRAG System}
 
-Adapting SetFit to multi-label classification presents unique challenges, as the original method was designed for single-label classification. We explored three strategies for handling multiple emotion labels:
+EmoRAG (Emotion Retrieval-Augmented Generation) is a novel system developed for multi-label emotion detection that reframes the problem through the lens of retrieval-augmented generation. Rather than relying on model fine-tuning, EmoRAG leverages the knowledge captured in labeled examples retrieved at inference time, enabling multilingual, few-shot emotion classification without updating model parameters.
+
+\subsubsection{Pipeline Overview}
+
+The EmoRAG architecture follows a four-stage pipeline, illustrated in Figure~\ref{fig:emorag_pipeline}:
 
 \begin{enumerate}
-\item \textbf{Multi-output Strategy}: Train a single classifier that outputs multiple binary predictions, one for each emotion label. This approach treats each emotion independently but allows the model to learn correlations between them.
-
-\item \textbf{Classifier Chain Strategy}: Train multiple classifiers in a chain, where each classifier takes as input both the sentence embedding and the predictions of previous classifiers in the chain. This approach explicitly models dependencies between emotions.
-
-\item \textbf{One-vs-Rest Strategy}: Train separate binary classifiers for each emotion label. This approach is the simplest but ignores potential correlations between emotions.
+\item \textbf{Database Construction}: The system first indexes the labeled examples from the BRIGHTER training dataset as a retrieval corpus.
+\item \textbf{Retrieval}: An n-gram or embedding-based retriever fetches the top-K most similar examples to a given input.
+\item \textbf{Generation}: The retrieved examples are used as few-shot prompts for a set of pre-trained large language models (LLMs) to produce emotion predictions.
+\item \textbf{Aggregation}: The individual model predictions are combined via a learned or heuristic aggregation strategy (e.g., majority vote, label-weighted averaging) to produce the final multi-label output.
 \end{enumerate}
 
-Figure 4.4 visualizes these three strategies for multi-label classification with SetFit.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{emorag.png}
+    \caption{The EmoRAG pipeline includes a retriever, a set of LLMs, and an aggregation module. Retrieved labeled examples are used as prompts to generate multi-label predictions.}
+    \label{fig:emorag_pipeline}
+\end{figure}
+
+\subsubsection{Retriever Component}
+
+We experimented with two retrieval strategies:
+\begin{itemize}
+\item \textbf{N-gram Overlap}: Particularly effective for low-resource languages, this method retrieves examples based on surface lexical similarity.
+\item \textbf{Embedding-based Retrieval (BGE-M3)}: A dense vector retriever using sentence-level embeddings that supports multilingual representations.
+\end{itemize}
+
+The number of retrieved samples K is fixed per language type: 30 for low-resource languages and 100 for high-resource ones.
+
+\subsubsection{Generator Models}
+
+For generation, EmoRAG uses a diverse ensemble of LLMs including:
+\begin{itemize}
+\item \texttt{Llama-3.1-70B}
+\item \texttt{Qwen2.5-72B-Instruct}
+\item \texttt{Gemma-2-27B-it}
+\item \texttt{GPT-4o-mini}
+\end{itemize}
+Each LLM receives the same prompt structure, written in English and formatted to generate emotion predictions in JSON format:
+\begin{verbatim}
+{
+"anger": bool,
+"fear": bool,
+"joy": bool,
+"sadness": bool,
+"surprise": bool,
+"disgust": bool
+}
+\end{verbatim}
+
+\subsubsection{Aggregation Strategies}
+
+To aggregate predictions from multiple LLMs, we evaluate five strategies:
+\begin{itemize}
+\item \textbf{Single model} output (e.g., GPT-4o-mini)
+\item \textbf{Majority Vote}
+\item \textbf{Macro/Micro-F1 Weighted Voting}
+\item \textbf{Label-specific F1 Voting} – the most successful method in our experiments
+\item \textbf{LLM-based Aggregation} – using one LLM to aggregate others’ outputs
+\end{itemize}
+
 
 \section{Experiments}
 
