@@ -428,16 +428,19 @@ In terms of efficiency, the supervised approaches required substantial training 
 
 \subsection{Performance by Language}
 
-% \begin{figure}[h]
-%     \centering
-%     \includegraphics[width=1\textwidth]{emorag_by_language.png}
-%     \caption{EmoRAG performance across all 28 languages in the BRIGHTER dataset}
-%     \label{fig:emorag_by_language}
-% \end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{emorag_by_language.png}
+    \caption{EmoRAG performance across all 28 languages in the BRIGHTER dataset}
+    \label{fig:emorag_by_language}
+\end{figure}
+
 
 Table \ref{tab:multilingual_performance} presents the performance of our best EmoRAG system across all 28 languages in the BRIGHTER dataset on the validation set, showing F1-micro/F1-macro scores for each language and aggregation method.
 
 Table \ref{tab:test_metrics} presents the performance of our best EmoRAG system across all 28 languages in the BRIGHTER dataset on the test set, showing F1-micro/F1-macro scores for each language and aggregation method.
+
+Figure \ref{fig:emorag_by_language} shows the performance of our best EmoRAG system across all 28 languages in the BRIGHTER dataset on the validation set, showing F1-micro/F1-macro scores for the best performing model for each language.
 
 \begin{table*}[!th]
 \begin{center}
@@ -600,7 +603,26 @@ Removing the embedding-based retriever reduced performance by 5.5\% on average, 
 %     \label{fig:example_count}
 % \end{figure}
 
-We varied the number of retrieved examples (K) from 5 to 200 and found that performance generally improved with more examples up to a point, after which returns diminished or performance decreased. The optimal K varied by language: high-resource languages benefited from larger K values (100-150), while low-resource languages performed best with moderate K values (30-50). This suggests that quality of examples matters more than quantity for low-resource settings.
+We varied the number of retrieved examples (K) from 0 to 1000 and found that performance generally improved with more examples up to a point, after which returns diminished or performance decreased. The optimal K varied by language: high-resource languages benefited from larger K values (100-150), while low-resource languages performed best with moderate K values (30-50). This suggests that quality of examples matters more than quantity for low-resource settings.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Number of Examples (K)} & \textbf{F1-micro} & \textbf{F1-macro} \\
+\midrule
+0 (zero-shot) & 0.5959 & 0.6164 \\
+30 & 0.8036 & 0.8001 \\
+100 & 0.8071 & 0.8026 \\
+300 & 0.7911 & 0.7762 \\
+1000 & 0.7882 & 0.7769 \\
+\bottomrule
+\end{tabular}
+\caption{Impact of retrieved example count on GPT-4o-mini performance for English language}
+\label{tab:example_count}
+\end{table}
+
+As shown in Table \ref{tab:example_count}, for English, performance improves dramatically when moving from zero-shot to few-shot with 30 examples, with a slight additional improvement at 100 examples. However, increasing to 300 or 1000 examples actually leads to decreased performance. This pattern suggests that there is an optimal window for the number of retrieved examples, beyond which the model may become overwhelmed with potentially conflicting information or less relevant examples.
 
 \subsection{Cross-model Analysis}
 
