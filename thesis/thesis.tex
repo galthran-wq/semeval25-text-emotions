@@ -1,8 +1,8 @@
 \documentclass[a4paper,12pt]{extarticle}
 \usepackage{geometry}
-\usepackage[T1]{fontenc}
+\usepackage[T2A,T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[english,russian]{babel}
+\usepackage[russian,main=english]{babel}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
@@ -45,6 +45,12 @@ maxbibnames=99
 \setlength{\parindent}{1.25cm}
 \renewcommand{\baselinestretch}{1.5} % междустрочный интервал
 
+\AtBeginDocument{
+  \renewcommand{\figurename}{Figure}
+  \renewcommand{\tablename}{Table}
+}
+
+\selectlanguage{english}
 
 \newcommand{\bibref}[3]{\hyperlink{#1}{#2 (#3)}} % biblabel, authors, year
 \addto\captionsrussian{\def\refname{Список литературы (или источников)}} 
@@ -56,10 +62,20 @@ maxbibnames=99
 \renewcommand{\theenumiii}{.\arabic{enumiii}}% Меняем везде перечисления на цифра.цифра
 \renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.}% Меняем везде перечисления на цифра.цифра
 
+% Set up font encoding switching
+\DeclareTextFontCommand{\textcyr}{\fontencoding{T2A}\selectfont}
+
 \begin{document}
-\input{title_vkr}% это титульный лист - выберите подходящий вам из имеющихся в проекте вариантов (kr - курсовая работа у 3 курса, vkr - выпускная квалификационная работа у 4 курса)
+% Switch to T2A encoding for the title page which contains Cyrillic
+{\fontencoding{T2A}\selectfont
+\input{title_vkr}
+}
 \newpage
 \setcounter{page}{2}
+
+% Switch back to T1 encoding for the rest of the document
+\fontencoding{T1}\selectfont
+\selectlanguage{english}
 
 {
 	\hypersetup{linkcolor=black}
@@ -105,7 +121,7 @@ The remainder of this thesis is organized as follows:
 
 \textbf{Chapter 7: Discussion} interprets our results, comparing the strengths and weaknesses of each approach.
 
-\textbf{Chapter 8: Conclusion and Future Work} summarizes key findings and suggests directions for future research.
+\textbf{Chapter 8: Conclusions} summarizes key findings and suggests directions for future research.
 
 \section{Related Work}
 
@@ -304,10 +320,13 @@ The EmoRAG architecture follows a four-stage pipeline, illustrated in Figure~\re
 \subsubsection{Retriever Component}
 
 We experimented with two retrieval strategies:
-\begin{itemize}
-\item \textbf{N-gram Overlap}: Particularly effective for low-resource languages, this method retrieves examples based on surface lexical similarity.
-\item \textbf{Embedding-based Retrieval}: A dense vector retriever using sentence-level embeddings that supports multilingual representations. For our experiments, we used the BGE-M3 embedding model \cite{chen2024bgem3embeddingmultilingualmultifunctionality}, which achieved state-of-the-art performance on the multilingual subset of the MTEB benchmark \cite{muennighoff2023mtebmassivetextembedding}.
-\end{itemize}
+
+
+\textbf{N-gram Overlap}: Particularly effective for low-resource languages, this method retrieves examples based on surface lexical similarity. We have used the n-gram retriever from the 
+\texttt{LangChain module}~\footnote{\href{https://python.langchain.com/docs/how_to/example_selectors_ngram}{\texttt{python.langchain.com}}}~\cite{Chase_LangChain_2022}. 
+
+
+\textbf{Embedding-based Retrieval}: A dense vector retriever using sentence-level embeddings that supports multilingual representations. For our experiments, we used the BGE-M3 embedding model \cite{chen2024bgem3embeddingmultilingualmultifunctionality}, which achieved state-of-the-art performance on the multilingual subset of the MTEB benchmark \cite{muennighoff2023mtebmassivetextembedding}.
 
 The number of retrieved samples K is fixed per language type: 30 for low-resource languages and 100 for high-resource ones.
 
@@ -410,7 +429,7 @@ Qwen2.5 (few-shot, bge-m3) & 0.7790 & 0.7749 \\
 GPT-4o-mini (few-shot, bge-m3) & 0.8071 & 0.8026 \\
 GPT-4o-mini (few-shot, ngram) & 0.7810 & 0.7700 \\
 EmoRAG (majority vote) & 0.8080 & 0.8010 \\
-EmoRAG (majority vote macro) & 0.8230 & 0.8200 \\
+EmoRAG (majority vote macro) & 0.8130 & 0.8100 \\
 EmoRAG (label-specific F1) & \textbf{0.8210} & \textbf{0.8180} \\
 \bottomrule
 \end{tabular}
@@ -454,7 +473,7 @@ Figure \ref{fig:emorag_by_language} shows the performance of our best EmoRAG sys
     afr & 0.560/0.444 & \textbf{0.629/0.527} & 0.662/0.567 & 0.646/0.572 & 0.584/0.481 & 0.484/0.398 & 0.601/0.494 & 0.546/0.646 & 0.662/0.557 \\
     chn & 0.676/0.603 & 0.589/0.570 & 0.698/0.579 & \textbf{0.748/0.604} & 0.693/0.572 & 0.709/0.543 & 0.749/0.642 & 0.652/0.757 & 0.759/0.659 \\
     deu & 0.745/0.588 & 0.521/0.499 & \textbf{0.745/0.694} & 0.738/0.662 & 0.632/0.559 & 0.659/0.593 & 0.738/0.659 & 0.672/0.741 & 0.752/0.695 \\
-    eng & 0.735/0.726 & 0.779/0.775 & 0.807/0.803 & 0.770/0.781 & 0.769/0.759 & 0.720/0.723 & 0.801/0.808 & 0.823/0.820 & \textbf{0.821/0.818} \\
+    eng & 0.735/0.726 & 0.779/0.775 & 0.807/0.803 & 0.770/0.781 & 0.769/0.759 & 0.720/0.723 & 0.801/0.808 & 0.813/0.810 & \textbf{0.821/0.818} \\
     esp & 0.751/0.744 & 0.788/0.778 & 0.793/0.785 & 0.799/0.793 & 0.778/0.772 & 0.782/0.778 & 0.786/0.778 & 0.807/0.812 & \textbf{0.813/0.809} \\
     hau & 0.610/0.602 & 0.607/0.598 & 0.669/0.662 & \textbf{0.696/0.687} & 0.682/0.676 & 0.698/0.689 & 0.735/0.728 & 0.734/0.738 & 0.735/0.731 \\
     hin & 0.780/0.791 & 0.707/0.728 & 0.805/0.803 & 0.811/0.812 & 0.796/0.799 & 0.798/0.806 & 0.838/0.842 & 0.833/0.830 & \textbf{0.842/0.849} \\
@@ -540,8 +559,6 @@ Our analysis revealed several important patterns:
 
 \item \textbf{Aggregation Strategy Effectiveness}: The label-specific F1 weighting strategy proved most effective overall, outperforming other aggregation methods in 17 out of 28 languages. This suggests that emotion-specific expertise varies across models and languages, and weighting predictions accordingly yields better results.
 \end{itemize}
-
-The performance gap between high-resource and low-resource languages remains a significant challenge. While our EmoRAG system reduced this gap compared to supervised approaches, substantial disparities persist. For instance, the F1-micro score for English (0.821) is more than three times that of Makhuwa (0.257), highlighting the continued challenges in multilingual emotion detection.
 
 
 \section{Ablation Studies}
@@ -636,23 +653,19 @@ The experimental results demonstrate clear performance differences between tradi
 
 \textbf{Seq2Seq Approach:} Despite its theoretical appeal for handling label dependencies, this approach showed the weakest performance among supervised methods (F1-micro of 0.5126 on English). The generative framing of emotion detection appears less effective than discriminative approaches, possibly due to the challenge of generating precise combinations of emotion labels.
 
-\textbf{EmoRAG System:} Our novel retrieval-augmented approach achieved the highest performance across languages (F1-micro of 0.821 on English, 0.678 average across all languages). Its key strength is adaptability to new languages without requiring model retraining, making it particularly valuable for low-resource scenarios. The main drawback is higher inference cost due to multiple LLM calls (2.5 seconds per sample with four models).
-
-The performance gap between approaches widens for low-resource languages, where EmoRAG's retrieval mechanism provides a significant advantage by leveraging examples at inference time rather than relying solely on parameters learned during training.
+\textbf{EmoRAG System:} Our novel retrieval-augmented approach achieved the highest performance across languages (F1-micro of 0.821 on English, 0.678 average across all languages). Its key strength is adaptability to new languages without requiring model retraining, making it particularly valuable for low-resource scenarios. 
+The main drawback is higher inference cost due to multiple LLM calls (2.5 seconds per sample with four models).
+However, experiments show that using a single model (for example, gpt-4o-mini) is still better than any other experimented supervised approach.
 
 \subsection{Performance on Low-resource Languages}
 
-Our results highlight persistent challenges in emotion detection for low-resource languages. The performance disparity between high-resource languages like English (F1-micro of 0.821) and low-resource languages like Makhuwa (F1-micro of 0.257) remains substantial, though EmoRAG reduces this gap compared to supervised approaches.
+Our results highlight persistent challenges in emotion detection for low-resource languages. The performance disparity between high-resource languages like English (F1-micro of 0.821) and low-resource languages like Makhuwa (F1-micro of 0.257) remains substantial.
 
 Several factors contribute to these challenges:
 
 \textbf{Script and Tokenization Issues:} Languages with unique scripts or limited representation in pre-training data face tokenization challenges that affect model performance. This explains why n-gram retrieval outperformed embedding-based retrieval for languages like Oromo, Moroccan Arabic, and Chinese.
 
 \textbf{Cultural Expression of Emotions:} Emotions are expressed differently across cultures, and these nuances may not be well-captured in models primarily trained on high-resource languages. The ablation studies showed that increasing the number of retrieved examples beyond a certain point (30-50 for low-resource languages) actually decreased performance, suggesting that quality and relevance of examples matter more than quantity.
-
-\textbf{Transfer Learning Limitations:} While multilingual models like XLM-RoBERTa show some transfer capabilities, our results indicate that this transfer is limited for emotion detection. The performance on languages from the same family (e.g., Indo-European) was more consistent than across different language families, suggesting that linguistic similarity facilitates knowledge transfer.
-
-The retrieval mechanism in EmoRAG provides a partial solution to these challenges by retrieving language-specific examples at inference time. This approach effectively leverages the few available examples in low-resource languages without requiring extensive model training.
 
 \subsection{Error Analysis}
 
@@ -662,30 +675,29 @@ Analysis of misclassifications reveals several common error patterns across appr
 
 \textbf{Cultural Nuances:} Expressions that rely on cultural context or idioms were frequently misclassified. For example, expressions of joy in African languages that use metaphorical language were often missed by models.
 
-\textbf{Co-occurring Emotions:} Cases where multiple emotions co-occur in complex patterns presented challenges for all approaches. The EmoRAG system with label-specific F1 weighting performed best on these cases, suggesting that its ability to leverage different models' strengths for different emotion categories is particularly valuable for multi-label scenarios.
+\textbf{Co-occurring Emotions:} Cases where multiple emotions co-occur in complex patterns presented challenges for all approaches.
 
 \textbf{Linguistic Structure:} Languages with significantly different syntactic structures from high-resource languages showed higher error rates. This was evident in the performance gap between analytic languages like English and agglutinative languages like Swahili and Turkish.
 
 The ensemble-based nature of EmoRAG helped mitigate some of these errors by combining predictions from multiple models with different strengths. The label-specific F1 weighting strategy proved particularly effective, outperforming other aggregation methods in 17 out of 28 languages by accounting for each model's expertise in specific emotion-language combinations.
 
-\section{Conclusion and Future Work}
+\section{Conclusions}
 
-This thesis has investigated various approaches for multilingual, multi-label emotion detection, with a particular focus on addressing the challenges of low-resource languages. We compared traditional supervised approaches (BERT, SetFit, and Seq2Seq) with a novel retrieval-augmented generation system (EmoRAG) across 28 languages from the BRIGHTER dataset.
+This thesis has investigated various approaches for multilingual, multi-label emotion detection, with a particular focus on addressing the challenges of low-resource languages. We compared traditional supervised approaches (BERT, SetFit, and Seq2Seq) with a novel retrieval-augmented generation system (EmoRAG). We have evaluated our system on 28 languages from the BRIGHTER dataset.
 
 \subsection{Summary of Findings}
 
 Our research has yielded several key findings:
 
 \begin{itemize}
-    \item Retrieval-augmented generation significantly outperforms traditional supervised approaches for multilingual emotion detection, with our EmoRAG system achieving an average F1-micro score of 0.678 across all languages compared to 0.715 for the best supervised approach (BERT) on English alone.
+    \item Retrieval-augmented generation significantly outperforms traditional supervised approaches for emotion detection on English, with our EmoRAG system achieving an average F1-micro score of 0.678 across all languages compared to 0.715 for the best supervised approach (BERT).
     
-    \item The performance gap between high-resource and low-resource languages remains substantial, but retrieval-augmented approaches reduce this disparity by leveraging examples at inference time rather than relying solely on parameters learned during training.
+    \item The performance gap between high-resource and low-resource languages still remains substantial.
     
     \item Different retrieval strategies are optimal for different languages: embedding-based retrieval works best for high-resource languages with substantial pre-training data, while n-gram retrieval often performs better for languages with unique scripts or limited representation in pre-training.
     
     \item Ensemble methods that combine predictions from multiple models with label-specific weighting strategies consistently outperformed single-model approaches, demonstrating the complementary nature of different LLMs' capabilities across languages and emotions.
     
-    \item The optimal number of retrieved examples varied by language resource level: high-resource languages benefited from larger retrieval sets (100-150 examples), while low-resource languages performed best with moderate retrieval sets (30-50 examples).
 \end{itemize}
 
 \subsection{Limitations}
@@ -693,34 +705,14 @@ Our research has yielded several key findings:
 Despite the promising results, our approaches face several limitations:
 
 \begin{itemize}
-    \item Computational Efficiency: The EmoRAG system requires multiple LLM calls per prediction, resulting in higher inference costs (2.5 seconds per sample) compared to supervised approaches (0.05 seconds for BERT). This limits its applicability in real-time or resource-constrained settings.
-    
     \item Performance on Very Low-Resource Languages: Even with retrieval augmentation, performance on extremely low-resource languages like Makhuwa (F1-micro of 0.257) and Tigrinya (F1-micro of 0.397) remained poor, indicating that fundamental challenges in cross-lingual transfer persist.
     
     \item Cultural Nuance: All approaches struggled with culturally-specific expressions of emotion, particularly idioms and metaphorical language that require cultural context to interpret correctly.
     
     \item Retrieval Quality: The effectiveness of retrieval-augmented approaches depends heavily on the quality and relevance of retrieved examples. Current retrieval mechanisms do not account for cultural or pragmatic factors that influence emotion expression.
     
-    \item Evaluation Metrics: While F1 scores provide a standardized measure of performance, they may not fully capture the nuanced nature of emotion detection, particularly for expressions that convey multiple emotions simultaneously with varying intensities.
 \end{itemize}
 
-\subsection{Future Research Directions}
-
-Based on our findings and limitations, we identify several promising directions for future research:
-
-\begin{itemize}
-    \item Culturally-Aware Retrieval: Developing retrieval mechanisms that account for cultural and pragmatic factors in emotion expression could improve performance on low-resource languages. This might involve incorporating cultural knowledge bases or learning culture-specific embedding spaces.
-    
-    \item Efficient Multi-Model Inference: Exploring distillation or pruning techniques to reduce the computational cost of ensemble methods while maintaining their performance advantages would make retrieval-augmented approaches more practical for real-world applications.
-    
-    \item Hybrid Approaches: Combining the parameter efficiency of supervised approaches with the adaptability of retrieval-augmented methods could offer a better balance between performance and computational efficiency. This might involve parameter-efficient fine-tuning techniques like adapters or prompt tuning.
-    
-    \item Improved Cross-Lingual Transfer: Investigating methods to better transfer knowledge between linguistically distant languages, perhaps through intermediate bridging languages or multilingual contrastive learning, could help address the persistent performance gap for very low-resource languages.
-    
-    \item Emotion-Specific Modeling: Our results suggest that different emotions benefit from different modeling approaches. Developing specialized components for detecting specific emotions, particularly those that are expressed differently across cultures, could improve overall performance.
-    
-    \item Dynamic Retrieval Strategies: Adapting the retrieval strategy (method, number of examples, etc.) based on the input language and text characteristics could optimize performance across diverse languages and emotion expressions.
-\end{itemize}
 
 In conclusion, while there are still challenges in detecting emotions across multiple languages, especially those with fewer resources, our research shows that using retrieval-augmented methods is a promising way forward. By leveraging the capabilities of large language models and flexible retrieval techniques, we can create systems that better understand emotions in different cultural contexts.
 
