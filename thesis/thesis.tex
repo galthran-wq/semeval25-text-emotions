@@ -667,19 +667,91 @@ Several factors contribute to these challenges:
 
 \textbf{Cultural Expression of Emotions:} Emotions are expressed differently across cultures, and these nuances may not be well-captured in models primarily trained on high-resource languages. The ablation studies showed that increasing the number of retrieved examples beyond a certain point (30-50 for low-resource languages) actually decreased performance, suggesting that quality and relevance of examples matter more than quantity.
 
-\subsection{Error Analysis}
+\subsection{Error Analysis with Examples}
 
-Analysis of misclassifications reveals several common error patterns across approaches:
+Analysis of misclassifications reveals several common error patterns across approaches, which can be illustrated through specific examples from our evaluation dataset:
 
-\textbf{Emotion Intensity Confusion:} All approaches struggled with distinguishing between different intensities of the same emotion. This was particularly evident for subtle expressions of emotions like fear and surprise, where contextual understanding is crucial.
+\textbf{Emotion Intensity Confusion:} All approaches struggled with distinguishing between different intensities of the same emotion. For example, as shown in Table~\ref{tab:intensity-confusion}:
 
-\textbf{Cultural Nuances:} Expressions that rely on cultural context or idioms were frequently misclassified. For example, expressions of joy in African languages that use metaphorical language were often missed by models.
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{8.5cm}|p{2.5cm}|p{2.5cm}|}
+\hline
+\textbf{Text} & \textbf{True Emotions} & \textbf{Predicted Emotions} \\
+\hline
+``Ich wurde mit 17 ins Milieu verschleppt, gehandelt, verkauft, zur einer Schwangerschaft (und Austragung) gezwungen und konnte erst mit fast 20 flüchten. Gemeinsam mit meinem Kind.'' \newline (German: "I was abducted into prostitution at 17, trafficked, sold, forced into pregnancy (and carrying to term) and could only escape at almost 20. Together with my child.") & anger, disgust, sadness & anger, disgust, fear, sadness \\
+\hline
+``Taurus-Leaks: Der Skandal besteht darin, dass deutsche Offiziere mit deutschen Waffen einen Angriff gegen Russland bis ins Detail planen.'' \newline (German: "Taurus Leaks: The scandal is that German officers are planning an attack against Russia with German weapons in detail.") & anger, disgust, fear & anger, disgust, fear, surprise \\
+\hline
+\end{tabular}
+\caption{Examples of emotion intensity confusion}
+\label{tab:intensity-confusion}
+\end{table}
 
-\textbf{Co-occurring Emotions:} Cases where multiple emotions co-occur in complex patterns presented challenges for all approaches.
+In these examples, the model correctly identified the primary emotions but added additional emotions that weren't annotated, suggesting difficulty in calibrating emotional intensity thresholds.
 
-\textbf{Linguistic Structure:} Languages with significantly different syntactic structures from high-resource languages showed higher error rates. This was evident in the performance gap between analytic languages like English and agglutinative languages like Swahili and Turkish.
+\textbf{Cultural Nuances:} Expressions that rely on cultural context or idioms were frequently misclassified, as illustrated in Table~\ref{tab:cultural-nuances}:
 
-The ensemble-based nature of EmoRAG helped mitigate some of these errors by combining predictions from multiple models with different strengths. The label-specific F1 weighting strategy proved particularly effective, outperforming other aggregation methods in 17 out of 28 languages by accounting for each model's expertise in specific emotion-language combinations.
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{8.5cm}|p{2.5cm}|p{2.5cm}|}
+\hline
+\textbf{Text} & \textbf{True Emotions} & \textbf{Predicted Emotions} \\
+\hline
+``@<username> @<username> Jack na akpari onwe ya'' \newline (Igbo: "Jack is just boasting") & anger & [none] \\
+\hline
+``Anu Matak Mun di Imah kosong tong ngomong punten bisi Aya NU nembalan'' \newline (Sundanese: "Why do we say 'excuse me' in an empty house? In case someone answers") & fear & fear, surprise \\
+\hline
+``Vi blev någorlunda nöjda. Vi kommenterade missnöjet, en väldigt liten åtgärd gjordes men ändock blev vi inte helt nöjda.'' \newline (Swedish: "We were somewhat satisfied. We commented on the dissatisfaction, a very small measure was taken but still we were not completely satisfied.") & joy & anger, sadness \\
+\hline
+\end{tabular}
+\caption{Examples of cultural nuance misclassifications}
+\label{tab:cultural-nuances}
+\end{table}
+
+These examples demonstrate how culturally-specific expressions of emotions can be misinterpreted, particularly in low-resource languages where models have less exposure to cultural nuances.
+
+\textbf{Co-occurring Emotions:} Cases where multiple emotions co-occur presented challenges, as shown in Table~\ref{tab:co-occurring-emotions}:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{8.5cm}|p{2.5cm}|p{2.5cm}|}
+\hline
+\textbf{Text} & \textbf{True Emotions} & \textbf{Predicted Emotions} \\
+\hline
+``It overflowed and brown shitty diarrhea water came flooding under the stall wall into my wife's stall.'' & anger, fear, sadness, surprise & anger, fear, surprise \\
+\hline
+``Caz halucinant de cruzime Un bărbat acuză un polițist din Sibiu că la snopit în bătaie "Am stat în genunchi"'' \newline (Romanian: "Hallucinating case of cruelty A man accuses a police officer from Sibiu of beating him up 'I was on my knees'") & anger, disgust, fear, sadness, surprise & anger, disgust, sadness \\
+\hline
+``Pobre chica, te quemaste tu solita.'' \newline (Spanish: "Poor girl, you burned yourself.") & disgust, sadness, surprise & sadness \\
+\hline
+\end{tabular}
+\caption{Examples of co-occurring emotion misclassifications}
+\label{tab:co-occurring-emotions}
+\end{table}
+
+These examples show that models often capture the dominant emotions but miss secondary or tertiary emotions, particularly in complex emotional scenarios.
+
+\textbf{Linguistic Structure:} Languages with significantly different syntactic structures showed higher error rates, as demonstrated in Table~\ref{tab:linguistic-structure}:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{8.5cm}|p{2.5cm}|p{2.5cm}|}
+\hline
+\textbf{Text} & \textbf{True Emotions} & \textbf{Predicted Emotions} \\
+\hline
+``[Tigrinya text omitted]'' \newline (Tigrinya expression of disgust) & disgust & [none] \\
+\hline
+``[Makhuwa text omitted]'' \newline (Makhuwa: "Brazil is now the father of the World Cup and looks weak.") & sadness & [none] \\
+\hline
+``[Chinese text omitted]'' \newline (Chinese: "Sigh, people can't see that he's still the pill king, don't know where he got the money from, I'm short on cash recently and would like to earn some too.") & [none] & anger \\
+\hline
+\end{tabular}
+\caption{Examples of linguistic structure challenges}
+\label{tab:linguistic-structure}
+\end{table}
+
+These examples highlight the challenges in processing languages with different scripts and syntactic structures, particularly for low-resource languages where pre-training data is limited.
 
 \section{Conclusions}
 
