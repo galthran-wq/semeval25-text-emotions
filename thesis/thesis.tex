@@ -1,8 +1,9 @@
 \documentclass[a4paper,12pt]{extarticle}
 \usepackage{geometry}
-\usepackage[T2A,T1]{fontenc}
+\usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[russian,main=english]{babel}
+\usepackage{cmap}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
@@ -21,7 +22,7 @@ style=numeric,
 maxbibnames=99
 ]{biblatex}
 \addbibresource{refs.bib}
-\usepackage[colorlinks,citecolor=blue,linkcolor=blue,bookmarks=false,hypertexnames=true, urlcolor=blue]{hyperref} 
+\usepackage[unicode=true,colorlinks,citecolor=blue,linkcolor=blue,bookmarks=false,hypertexnames=true,urlcolor=blue]{hyperref}
 \usepackage{indentfirst}
 \usepackage{mathtools}
 \usepackage{booktabs}
@@ -65,19 +66,12 @@ maxbibnames=99
 \renewcommand{\theenumiii}{.\arabic{enumiii}}% Меняем везде перечисления на цифра.цифра
 \renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.}% Меняем везде перечисления на цифра.цифра
 
-% Set up font encoding switching
-\DeclareTextFontCommand{\textcyr}{\fontencoding{T2A}\selectfont}
-
 \begin{document}
-% Switch to T2A encoding for the title page which contains Cyrillic
-{\fontencoding{T2A}\selectfont
-\input{title_vkr}
-}
+% Use UTF-8 encoding for the entire document
+% \input{title_vkr}
 \newpage
 \setcounter{page}{2}
 
-% Switch back to T1 encoding for the rest of the document
-\fontencoding{T1}\selectfont
 \selectlanguage{english}
 
 {
@@ -102,95 +96,94 @@ Deep learning, emotion detection, multilingual NLP, retrieval-augmented generati
 
 \section{Introduction}
 
-Emotions are fundamental to human communication and experience, coloring our interactions, decisions, and perceptions. The ability to detect and understand emotions in text has become increasingly important in natural language processing (NLP), with applications spanning various domains including customer service, mental health monitoring, content recommendation, social media analysis, and educational technology.
+Emotions are fundamental to human communication and experience, giving depth to our interactions, decisions, and perceptions. The ability to detect and understand emotions in text has become increasingly important in natural language processing (NLP), with applications in numerous domains including customer service, mental health monitoring, content recommendation, social media analysis, and educational technology.
 
-Unlike traditional sentiment analysis, which typically focuses on determining whether a text is positive, negative, or neutral, emotion detection aims to identify specific emotional states such as joy, sadness, anger, fear, surprise, and disgust. This fine-grained understanding of affective content enables more nuanced and human-like interactions between computational systems and users.
+Unlike traditional sentiment analysis, which typically focuses on determining if text is positive, negative, or neutral, emotion detection aims to identify specific emotional states such as joy, sadness, anger, fear, surprise, and disgust. This detailed understanding of emotional content enables more nuanced and human-like interactions between computer systems and users.
 
-The development of effective multi-lingual, multi-label emotion detection systems faces several interconnected challenges. Linguistic diversity presents a significant hurdle, as human languages vary dramatically in their lexical, syntactic, and semantic structures, including how emotions are expressed. Data scarcity is particularly problematic for low-resource languages, which lack substantial labeled datasets for emotion detection. The multi-label nature of emotions adds complexity, as texts frequently express multiple emotions simultaneously. Cross-cultural variations in how emotions are expressed and interpreted further complicate the development of universally applicable systems. Finally, computational efficiency concerns arise when considering the impracticality of training separate models for thousands of languages.
+The development of effective multi-lingual, multi-label emotion detection systems faces several interconnected challenges. Language diversity presents a significant obstacle, as human languages exhibit substantial differences in their lexical, grammatical, and semantic structures, including how emotions are expressed. Data scarcity is especially problematic for low-resource languages, which lack sufficient labeled datasets for emotion detection. The multi-label nature of emotions adds complexity, as texts often express multiple emotions simultaneously. 
+Additionally, cross-cultural differences in emotional expression further complicate the task.
 
-This thesis investigates multi-lingual, multi-label emotion detection, exploring approaches that can operate effectively with limited labeled data, adapt to linguistic and cultural differences, and handle the inherent complexity of multi-label emotion classification. We compare traditional supervised approaches with newer paradigms like retrieval-augmented generation, examining their effectiveness across languages with varying resource availability.
+In this thesis we investigate multi-lingual, multi-label emotion detection, exploring approaches that can function with limited labeled data, adapt to linguistic and cultural differences, and handle the complexity of multi-label emotion classification. 
 
-The remainder of this thesis is organized as follows:
+We compare traditional supervised approaches with newer paradigms like retrieval-augmented generation, examining their effectiveness across languages with varying resource availability.
 
-\textbf{Chapter 2: Related Work} reviews previous research in emotion detection, multi-label classification, multi-lingual NLP models, retrieval-augmented generation, few-shot learning, and large language models for emotion detection.
+The rest of this thesis is organized like this:
 
-\textbf{Chapter 3: Data} describes the BRIGHTER dataset, including its creation, annotation process, and composition.
+\textbf{Chapter 2: Related Work} looks at previous research in emotion detection, multi-label classification, multi-lingual NLP models, retrieval-augmented generation, few-shot learning, and large language models for emotion detection.
 
-\textbf{Chapter 4: Methodology} presents our four approaches: BERT-based fine-tuning, SetFit few-shot learning, Seq2Seq generative models, and our novel EmoRAG system.
+\textbf{Chapter 3: Data} describes BRIGHTER dataset, including how it was created, annotation process, and what it consists of.
 
-\textbf{Chapter 5: Experiments} outlines our experimental setup, evaluation metrics, and hyperparameter tuning strategies.
+\textbf{Chapter 4: Methodology} presents our four approaches: BERT-based fine-tuning, SetFit few-shot learning, Seq2Seq generative models, and our new EmoRAG system.
 
-\textbf{Chapter 6: Ablation Studies} presents ablation studies of the EmoRAG system, examining the impact of different components on performance.
+\textbf{Chapter 5: Experiments} describes our experimental setup, evaluation metrics, and hyperparameter tuning strategies.
 
-\textbf{Chapter 7: Results} analyzes our experimental findings, including performance comparisons across approaches, languages, and emotion categories.
+\textbf{Chapter 6: Results} analyzes our experimental findings, including performance comparisons across approaches, languages, and emotion categories.
 
-\textbf{Chapter 8: Discussion} interprets our results, comparing the strengths and weaknesses of each approach.
+\textbf{Chapter 7: Ablation Studies} presents ablation studies of EmoRAG system, examining how different components impact on performance.
 
-\textbf{Chapter 9: Conclusions} summarizes key findings and suggests directions for future research.
+\textbf{Chapter 8: Discussion} interprets our results, comparing strong and weak sides of each approach.
+
+\textbf{Chapter 9: Conclusions} summarizes main findings.
 
 \section{Related Work}
 
-This chapter reviews key literature relevant to multi-lingual, multi-label emotion detection, focusing on four areas: traditional approaches to emotion detection, multi-label classification techniques, large language models, and retrieval-augmented generation systems.
+This chapter examines relevant literature related to multi-lingual, multi-label emotion detection, focusing on four areas: traditional approaches to emotion detection, multi-label classification techniques, large language models, and retrieval-augmented generation systems.
 
 \subsection{Emotion Detection in Text}
 
-Emotion detection in text has evolved significantly over the past two decades. Early work by \cite{strapparava2007semeval} introduced one of the first datasets for emotion recognition in English text, defining the task as detecting Ekman's six basic emotions: joy, sadness, anger, fear, surprise, and disgust. This work established the foundation for most subsequent research in the field.
+Emotion detection in text has evolved significantly over the past two decades. Early work by \cite{strapparava2007semeval} introduced one of the first datasets for emotion recognition in English text, defining the task as detecting Ekman's six basic emotions: joy, sadness, anger, fear, surprise, and disgust. This work established the foundation for subsequent research in the field.
 
-Classical approaches to emotion detection included lexicon-based methods and traditional machine learning techniques. \cite{mohammad2013crowdsourcing} developed the NRC Emotion Lexicon, mapping English words to emotions. These approaches provide strong baselines but struggle with contextual understanding and required extensive manual annotation for each language.
+Classical approaches to emotion detection included lexicon-based methods and traditional machine learning techniques. \cite{mohammad2013crowdsourcing} developed the NRC Emotion Lexicon, connecting English words to emotions. These approaches provide strong baselines but struggle with contextual understanding and require extensive manual annotation for each language.
 
-The advent of deep learning brought significant advances to emotion detection. \cite{felbo2017using} introduced DeepMoji, leveraging distant supervision from emojis to pre-train models for emotion recognition. More recently, transformer-based approaches have set new benchmarks. \cite{demszky2020goemotions} created GoEmotions, a large-scale dataset with 27 emotion categories, and demonstrated strong performance with BERT-based models.
+The advent of deep learning brought significant advances to emotion detection. \cite{felbo2017using} introduced DeepMoji, using distant supervision from emojis to pre-train models for emotion recognition.
 
 \subsection{Multi-label Classification and Language Models}
 
-Multi-label classification, where instances can belong to multiple categories simultaneously, is inherently relevant to emotion detection as texts often express multiple emotions at once. 
+Multi-label classification is crucial for emotion detection because texts can convey several emotions simultaneously. 
 
-Classical approaches to multi-label classification include binary relevance, which trains independent classifiers for each label, and label powerset, which transforms the problem into a multi-class classification task with each unique label combination as a separate class. \cite{read2011classifier} introduced classifier chains, which model inter-label dependencies by building a sequence of binary classifiers, demonstrating significant improvements over binary relevance methods.
+Traditional methods for multi-label classification include binary relevance, which involves training separate classifiers for each label, and label powerset, which converts the task into a multi-class classification problem by treating each unique label combination as a distinct class. \cite{read2011classifier} proposed classifier chains, which capture inter-label dependencies by creating a sequence of binary classifiers, showing notable improvements over binary relevance techniques.
 
-The evolution of language models has dramatically impacted text classification tasks, including emotion detection. BERT \cite{devlin2019bert} and its multilingual variant mBERT demonstrated strong performance across languages and tasks through contextual representations and pre-training on massive corpora. XLM-RoBERTa \cite{conneau2020unsupervised} further improved cross-lingual capabilities by training on 100 languages with 2.5 times more data than mBERT.
+The evolution of language models has dramatically impacted text classification tasks, including emotion detection. BERT \cite{devlin2019bert} and its multilingual variant mBERT demonstrated strong performance across languages and tasks through contextual representations and pre-training on massive corpora. XLM-RoBERTa \cite{conneau2020unsupervised} further improved cross-lingual capabilities by training on a larger multilingual corpus.
 
-Large Language Models (LLMs) like GPT-3 \cite{brown2020language} and its successors have shown remarkable few-shot capabilities through in-context learning, where models make predictions based on examples provided in the prompt. This paradigm shift has significant implications for multi-lingual emotion detection, potentially reducing the need for extensive labeled data in each language.
+Large Language Models (LLMs) such as GPT-3 \cite{brown2020language} and its successors have exhibited exceptional few-shot learning abilities through in-context learning, where models generate predictions based on examples included in the prompt. This shift in approach holds considerable potential for multilingual emotion detection, as it may lessen the reliance on extensive labeled datasets for each language.
 
-For multi-label settings, deep learning approaches have shown promise. \cite{nam2014large} demonstrated that using cross-entropy loss with a sigmoid activation function per label outperforms ranking-based loss functions in neural networks. 
+In multi-label scenarios, deep learning techniques have proven effective. \cite{nam2014large} showed that employing cross-entropy loss with a sigmoid activation function for each label surpasses ranking-based loss functions in neural network applications.
 
 \subsection{Few-shot Learning in NLP}
 
-Few-shot learning has become increasingly important for addressing data scarcity in NLP, particularly for low-resource languages. \cite{brown2020language} demonstrated the remarkable few-shot capabilities of large language models through in-context learning, where a model makes predictions based on a few examples provided in the prompt.
+Few-shot learning has gained prominence as a solution to the challenge of data scarcity, especially for languages with limited resources. 
+The work of \cite{brown2020language} highlighted the exceptional few-shot learning abilities of large language models, utilizing in-context learning where predictions are made based on a minimal set of examples included in the prompt.
 
-Building on this foundation, \cite{gao2021making} showed that carefully constructed prompts with strategically selected examples can dramatically improve few-shot performance on various NLP tasks, including classification. For more specialized applications, \cite{tunstall2022efficient} developed SetFit, a few-shot learning approach that combines contrastive learning with classification fine-tuning. By leveraging sentence transformers and efficient pair-wise training, SetFit achieves strong performance with as few as 8 examples per class.
+\cite{gao2021making} demonstrated that the performance of few-shot learning on various NLP tasks, such as classification, can be significantly enhanced by using well-crafted prompts with carefully chosen examples. For more targeted applications, \cite{tunstall2022efficient} introduced SetFit, a few-shot learning method that integrates contrastive learning with classification fine-tuning. By employing sentence transformers and effective pair-wise training, SetFit delivers robust performance with as few as eight examples per class.
 
-The selection of examples for few-shot learning significantly impacts performance. \cite{liu2022few} showed that retrieving examples based on semantic similarity to the test instance outperforms random selection, especially for complex tasks. Cross-lingual few-shot learning presents additional challenges. 
-
-Despite these advances, few-shot learning in multi-label settings remains challenging. \cite{hou2022few} addressed this gap with a specialized few-shot learning approach for multi-label classification that captures label correlations even with limited examples.
+The choice of examples in few-shot learning is especially important for optimizing performance. 
+\cite{liu2022few} found that selecting examples based on their semantic similarity to the test instance yields better results than random selection, particularly for complex tasks. 
 
 \subsection{Retrieval-Augmented Generation (RAG)}
 
-Retrieval-Augmented Generation (RAG) has emerged as a powerful paradigm for enhancing language model capabilities with external knowledge. \cite{lewis2020retrieval} introduced the original RAG framework, combining dense retrieval with sequence-to-sequence models to generate outputs conditioned on relevant retrieved documents.
+RAG enhances language models by integrating external knowledge. 
+\cite{lewis2020retrieval} introduced RAG, combining dense retrieval with sequence-to-sequence models for output generation based on relevant documents.
 
-While RAG was initially developed for generation tasks, its application to classification has shown promising results. \cite{gao2024retrieval} adapted RAG for text classification, demonstrating that retrieved examples can serve as few-shot demonstrations to guide in-context learning. Their approach achieved competitive performance on various classification benchmarks without requiring task-specific fine-tuning.
+Originally for generation, RAG's classification use is promising. 
+\cite{gao2024retrieval} adapted it for text classification, using retrieved examples as few-shot demonstrations, achieving competitive results without task-specific fine-tuning.
 
-For multi-lingual contexts, \cite{shi2023replug} developed Cross-Lingual RAG, which leverages a shared dense retrieval space across languages to retrieve relevant documents for low-resource languages. This approach is particularly valuable for emotion detection across diverse languages, as it enables knowledge transfer from high-resource to low-resource languages.
+In multilingual settings, 
+\cite{shi2023replug} developed Cross-Lingual RAG, using a shared retrieval space to aid low-resource languages, crucial for emotion detection across languages.
 
-The selection of retrieved documents significantly impacts RAG performance. \cite{gao2023retrieval} introduced techniques for dynamic retrieval that adapt to the specific needs of each query, showing that adaptive retrieval strategies outperform static approaches. In classification contexts, \cite{singh2022flare} demonstrated that RAG can mitigate the challenge of domain shift by retrieving examples similar to the test instance, regardless of their source domain.
-
+Document selection is essential for RAG's success. 
+\cite{gao2023retrieval} proposed dynamic retrieval techniques that adapt to query needs, outperforming static methods. 
+\cite{singh2022flare} showed RAG can address domain shift by retrieving similar examples to the test instance, regardless of their origin.
 \subsection{Research Gaps and Opportunities}
 
-Our review of the literature reveals several important gaps that this thesis aims to address:
+This thesis addresses key gaps in emotion detection research: 
 
-\begin{enumerate}
-
-    \item \textbf{Few-shot Learning for Low-resource Languages}: Most emotion detection systems require substantial labeled data, which is unavailable for many languages. Few studies have explored how large language models can effectively perform emotion detection with minimal examples across diverse languages.
-    
-    \item \textbf{Ensemble Methods for Multi-label Emotion Detection}: While ensemble approaches have shown promise in various NLP tasks, their application to multi-label emotion detection, particularly in multi-lingual settings, remains underexplored. There is limited research on how to effectively combine multiple LLM predictions to improve performance across emotions and languages.
-    
-    \item \textbf{Retrieval-Augmented Classification}: While RAG has shown promise for generation tasks, its application to multi-label classification, particularly emotion detection, remains underexplored.
-
-    \item \textbf{Balancing Performance Across Languages}: Existing approaches often show significant performance disparities between high-resource and low-resource languages. Few studies have systematically addressed how to design systems that maintain consistent performance across linguistically diverse languages.
-    
-    \item \textbf{Low-Resource Adaptability}: Few studies have explicitly addressed how emotion detection approaches can be adapted for low-resource languages with minimal labeled data.
-
-    \item \textbf{Capturing Emotion Co-occurrence Patterns}: The multi-label nature of emotion detection presents unique challenges, as emotions often co-occur in complex patterns. Limited research exists on how few-shot LLM approaches can effectively model these interdependencies without extensive training data.
-    
-\end{enumerate}
+Few-shot learning for low-resource languages remains underexplored, 
+with most systems requiring substantial labeled data. 
+Research on ensemble methods for multi-label emotion detection, especially in multilingual contexts, lacks thorough investigation on effectively combining LLM predictions. 
+The potential of retrieval-augmented classification in multi-label emotion detection is not fully realized. 
+Performance disparities between high-resource and low-resource languages remain significant, with few solutions for consistent performance across diverse languages. 
+Adaptability for low-resource languages with minimal data is rarely addressed. 
+Lastly, capturing emotion co-occurrence patterns continues to be challenging, with limited research on modeling these interdependencies using few-shot LLMs.
 
 \section{Data}
 \subsection{Overview}
@@ -198,22 +191,28 @@ Our review of the literature reveals several important gaps that this thesis aim
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.5\textwidth]{brighter_languages.png}
-    \caption{Languages in the BRIGHTER dataset}
+    \caption{Languages in BRIGHTER dataset}
     \label{fig:brighter_languages}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{brighter_examples.png}
-    \caption{Examples from the BRIGHTER dataset}
+    \caption{Examples from BRIGHTER dataset}
     \label{fig:brighter_examples}
 \end{figure}
 
-The BRIGHTER dataset \cite{muhammad2025brighterbridginggaphumanannotated} is a comprehensive, multi-labeled, multilingual resource for textual emotion recognition, consisting of over 100,000 annotated examples across 28 languages and 7 language families. Designed to address the stark resource imbalance in emotion research, BRIGHTER prioritizes low-resource languages from Africa, Asia, Eastern Europe, and Latin America, while also including mid- and high-resource languages such as English, German, and Portuguese.
+BRIGHTER dataset \cite{muhammad2025brighterbridginggaphumanannotated} is a comprehensive, multi-labeled, multilingual resource for textual emotion recognition, containing more than 100,000 annotated examples across 28 languages and 7 language families. 
+BRIGHTER prioritizes low-resource languages from Africa, Asia, Eastern Europe, and Latin America, as these languages are underrepresented in existing datasets.
+The dataset also includes mid- and high-resource languages like English, German, and Portuguese.
 
-Each instance in BRIGHTER is manually annotated by fluent speakers, with annotations covering six core perceived emotions — \textit{joy}, \textit{sadness}, \textit{anger}, \textit{fear}, \textit{surprise}, and \textit{disgust} — and includes an additional \textit{neutral} label when no emotion is expressed. Annotations are multi-label and span four emotion intensity levels (0 to 3).
+The collected examples are manually annotated by fluent speakers, 
+with six primary perceived emotions — \textit{joy}, \textit{sadness}, \textit{anger}, \textit{fear}, \textit{surprise}, and \textit{disgust}.
+If none of these emotions are present, the example is annotated with the \textit{neutral} label.
 
-The dataset aggregates data from diverse sources, including social media platforms (e.g., Reddit, YouTube, Weibo), speeches, literature, news, and even machine-generated examples with human post-editing. A detailed breakdown of these sources, annotator counts, and splits per language is given in the original BRIGHTER paper, with representative examples shown in Figure~\ref{fig:brighter_examples} and the language family distribution illustrated in Figure~\ref{fig:brighter_languages}.
+The dataset collects data from diverse sources, including social media platforms (for example, Reddit, YouTube, Weibo), speeches, literature, news, and even machine-generated examples with human post-editing. 
+Examples from the dataset are shown in Figure~\ref{fig:brighter_examples}.
+Language family distribution is shown in Figure~\ref{fig:brighter_languages}.
 
 \subsection{Data Splits}
 We use the official BRIGHTER dataset splits for all experiments. The Training Set comprises approximately 70\% of the data and is used for supervised model training. The Validation Set, which makes up about 15\% of the data, is utilized for early stopping and hyperparameter tuning. Finally, the Test Set also consists of approximately 15\% of the data and is reserved for final evaluation.
@@ -227,29 +226,26 @@ We use the official BRIGHTER dataset splits for all experiments. The Training Se
     \label{fig:brighter_label_distribution}
 \end{figure}
 
-While BRIGHTER is a rich and diverse resource, it also introduces several challenges that motivated our modeling choices:
+BRIGHTER introduces several challenges:
 
-Label Distribution: The dataset exhibits long-tailed distributions for both emotions and languages, as illustrated in Figure~\ref{fig:brighter_label_distribution}. Some languages lack examples for certain emotions (e.g., no \textit{disgust} in English, no \textit{surprise} in Afrikaans), and neutral examples vary greatly in frequency.
+Label Distribution: 
+The dataset exhibits long-tailed distributions for both emotions and languages, 
+as illustrated in Figure~\ref{fig:brighter_label_distribution}. 
+Some languages lack examples for certain emotions (e.g., no \textit{disgust} in English, no \textit{surprise} in Afrikaans), and neutral examples vary considerably in frequency.
 
-Linguistic Coverage: BRIGHTER spans typologically diverse languages with varying scripts (Latin, Arabic, Devanagari, Cyrillic), making it a strong benchmark for cross-lingual generalization.
-
-Annotation Density: Most languages have between 3 and 10 annotators per example, but annotation intensity and agreement levels vary. Final labels were aggregated using a combination of per-emotion thresholding and average intensity, ensuring consistent quality across languages.
-
-These considerations led us to explore both supervised and retrieval-augmented methods, with the aim of improving generalization under low-resource, high-diversity conditions.
+Linguistic Coverage: BRIGHTER encompasses typologically diverse languages with varying scripts (Latin, Arabic, Devanagari, Cyrillic), making it a robust benchmark for cross-lingual generalization.
 
 \section{Methodology}
 
-This chapter presents the various approaches we explored for multi-lingual, multi-label emotion detection using the BRIGHTER dataset. We investigate both traditional supervised learning approaches (BERT, SetFit, and Seq2Seq) and a novel retrieval-augmented generation (RAG) approach called EmoRAG. Each approach represents a different paradigm in machine learning for text classification:
+We explored four approaches: 
 
-\begin{enumerate}
-\item \textbf{BERT-based Approach}: Fine-tune a pre-trained language model with a classification head for multi-label prediction
-\item \textbf{SetFit Approach}: A few-shot learning technique that combines contrastive learning with standard classification techniques
-\item \textbf{Seq2Seq Approach}: Framing emotion detection as a text generation task
-\item \textbf{EmoRAG System}: A novel retrieval-augmented generation system that leverages few-shot learning without parameter updates
-\end{enumerate}
+\textbf{BERT-based Approach} fine-tunes a pre-trained model for multi-label prediction, applying a sigmoid function with a 0.5 threshold for binary predictions. It provides a strong baseline but struggles with low-resource languages.
 
-The following sections describe each approach in detail, including model architecture, training procedures, and implementation specifics.
+\textbf{Seq2Seq Approach} treats emotion detection as text generation, outputting a list of emotions. It utilizes encoder-decoder models like mT5, BART, and mBART to capture emotion relationships.
 
+\textbf{SetFit Approach} employs few-shot learning with two stages: contrastive learning to fine-tune sentence transformers, and classification using embeddings. It excels with limited data, adapting embeddings for emotion detection.
+
+\textbf{EmoRAG System} leverages retrieval-augmented generation for few-shot learning without parameter updates.
 \subsection{BERT-based Approach}
 
 For prediction, we apply a sigmoid function to the model outputs and use a threshold of 0.5 to convert probabilities to binary predictions:
@@ -301,24 +297,25 @@ The key innovation of SetFit is its ability to leverage the power of sentence tr
 
 \subsection{EmoRAG System}
 
-EmoRAG (Emotion Retrieval-Augmented Generation) is a novel system developed for multi-label emotion detection that reframes the problem through the lens of retrieval-augmented generation. Rather than relying on model fine-tuning, EmoRAG leverages the knowledge captured in labeled examples retrieved at inference time, enabling multilingual, few-shot emotion classification without updating model parameters.
+EmoRAG (Emotion Retrieval-Augmented Generation) is a RAG-based approach to emotion detection.
+We retrieve the most similar examples from the labeled dataset and use them as examples for generation with LLMs.
 
 \subsubsection{Pipeline Overview}
 
-The EmoRAG architecture follows a four-stage pipeline, illustrated in Figure~\ref{fig:emorag_pipeline}:
+EmoRAG architecture follows a four-stage pipeline, shown in Figure~\ref{fig:emorag_pipeline}:
 
 \begin{enumerate}
-\item \textbf{Database Construction}: The system first indexes the labeled examples from the BRIGHTER training dataset as a retrieval corpus.
-\item \textbf{Retrieval}: An n-gram or embedding-based retriever fetches the top-K most similar examples to a given input.
-\item \textbf{Generation}: The retrieved examples are used as few-shot prompts for a set of pre-trained large language models (LLMs) to produce emotion predictions.
-\item \textbf{Aggregation}: The individual model predictions are combined via a learned or heuristic aggregation strategy (e.g., majority vote, label-weighted averaging) to produce the final multi-label output.
+\item \textbf{Database Construction}: The system indexes labeled examples from the BRIGHTER training dataset as a retrieval corpus.
+\item \textbf{Retrieval}: N-gram or embedding-based retriever identifies the top-K most similar examples to a given input.
+\item \textbf{Generation}: Retrieved examples are used as few-shot prompts for a set of LLMs to produce emotion predictions.
+\item \textbf{Aggregation}: Individual model predictions are combined via an aggregation strategy to produce the final multi-label output.
 \end{enumerate}
 
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{emorag.png}
-    \caption{The EmoRAG pipeline includes a retriever, a set of LLMs, and an aggregation module. Retrieved labeled examples are used as prompts to generate multi-label predictions.}
+    \caption{The diagram of EmoRAG pipeline}
     \label{fig:emorag_pipeline}
 \end{figure}
 
@@ -327,84 +324,77 @@ The EmoRAG architecture follows a four-stage pipeline, illustrated in Figure~\re
 We experimented with two retrieval strategies:
 
 
-\textbf{N-gram Overlap}: Particularly effective for low-resource languages, this method retrieves examples based on surface lexical similarity. We have used the n-gram retriever from the 
+\textbf{N-gram Overlap}: This method retrieves examples based on surface lexical similarity. We have used the n-gram retriever from 
 \texttt{LangChain module}~\footnote{\href{https://python.langchain.com/docs/how_to/example_selectors_ngram}{\texttt{python.langchain.com}}}~\cite{Chase_LangChain_2022}. 
 
 
-\textbf{Embedding-based Retrieval}: A dense vector retriever using sentence-level embeddings that supports multilingual representations. For our experiments, we used the BGE-M3 embedding model \cite{chen2024bgem3embeddingmultilingualmultifunctionality}, which achieved state-of-the-art performance on the multilingual subset of the MTEB benchmark \cite{muennighoff2023mtebmassivetextembedding}.
+\textbf{Embedding-based Retrieval}: Dense vector retriever using sentence-level embeddings that supports multilingual representations. For our experiments, we used the BGE-M3 embedding model \cite{chen2024bgem3embeddingmultilingualmultifunctionality}, which achieved state-of-the-art performance on the multilingual subset of the MTEB benchmark \cite{muennighoff2023mtebmassivetextembedding}.
 
-The number of retrieved samples K is fixed per language type: 30 for low-resource languages and 100 for high-resource ones.
+The number of few-shot samples $K$ is fixed per language type: 30 for low-resource languages and 100 for high-resource ones.
 
 \subsubsection{Generator Models}
 
-For generation, EmoRAG uses a diverse ensemble of LLMs including:
+For generation, EmoRAG uses diverse ensemble of LLMs including:
 \texttt{Llama-3.1-70B \cite{grattafiori2024llama3herdmodels}}, \texttt{Qwen2.5-72B-Instruct \cite{yang2024qwen2technicalreport}}, \texttt{Gemma-2-27B-it \cite{gemmateam2024gemma2improvingopen}}, \texttt{GPT-4o-mini \cite{openai2024gpt4omini}}
-Each LLM receives the same prompt structure, written in English and formatted to generate emotion predictions in JSON format, as detailed in Appendix~\ref{appendix:llm_prompt}.
+Each LLM receives same prompt structure, written in English and formatted to generate emotion predictions in JSON format, as detailed in Appendix~\ref{appendix:llm_prompt}.
 
 \subsubsection{Aggregation Strategies}
 
 To aggregate predictions from multiple LLMs, we evaluate five strategies. 
 
-The \textbf{Single model} approach simply uses predictions from one LLM (e.g., GPT-4o-mini) without any aggregation. 
+\textbf{Single model} approach simply uses predictions from one LLM (for example, GPT-4o-mini) without any aggregation. 
 
-\textbf{Majority Vote} gives each model an equal vote for each emotion label, with the final prediction determined by the majority decision (threshold > 0.5). 
+\textbf{Majority Vote} gives each model equal vote for each emotion label, with final prediction determined by majority decision (threshold > 0.5). 
 
-In \textbf{Macro/Micro-F1 Weighted Voting}, models' votes are weighted by their macro or micro F1 scores on the validation set for the specific language, giving more influence to better-performing models. 
+In \textbf{Macro/Micro-F1 Weighted Voting}, models' votes are weighted by their macro or micro F1 scores on validation set for specific language, giving more influence to better-performing models. 
 
-\textbf{Label-specific F1 Voting} weights each model's vote by its F1 score for the specific emotion label and language, allowing models with higher performance on particular emotions to have more influence on those predictions. 
+\textbf{Label-specific F1 Voting} weights each model's vote by its F1 score for specific emotion label and language, allowing models with higher performance on particular emotions to have more influence on those predictions. 
 
-Finally, \textbf{LLM-based Aggregation} uses one LLM to analyze and aggregate the outputs from other models, potentially capturing more nuanced patterns in the predictions.
+Finally, \textbf{LLM-based Aggregation} uses one LLM to analyze and aggregate outputs from other models, potentially capturing more nuanced patterns in predictions.
 
 \section{Experiments}
 
 \subsection{Experimental Setup}
 
-Our experiments were conducted in two phases: first, a comprehensive evaluation of all approaches on English data to establish baseline performance, followed by an extensive multilingual evaluation focusing on our EmoRAG system across all 28 languages in the BRIGHTER dataset.
+Our experiments were conducted in two phases: first, a comprehensive evaluation of all approaches on English data to establish baseline performance, then an extensive multilingual evaluation focusing on our EmoRAG system across all 28 languages in the BRIGHTER dataset.
 
 \subsubsection{Computing Infrastructure}
 
-All experiments were conducted on the HSE University High-Performance Computing (HPC) Cluster "cHARISMa". This infrastructure provided essential computational resources for our large-scale experiments, particularly for training and evaluating transformer-based models. The cluster includes specialized nodes with NVIDIA Tesla V100 32GB GPUs and newer nodes with NVIDIA A100 80GB GPUs, which were crucial for training our larger models. For the most computationally intensive experiments, we utilized Type C computing nodes equipped with 4 NVIDIA Tesla V100 32GB GPUs with NVLink and 768GB RAM.
+All experiments were conducted on HSE University's High-Performance Computing (HPC) Cluster "cHARISMa". This infrastructure provided the necessary computational resources for our large-scale experiments, especially for training and evaluating transformer-based models. The cluster includes specialized nodes with NVIDIA Tesla V100 32GB GPUs and newer nodes with NVIDIA A100 80GB GPUs, which were essential for training our larger models. For the most computationally intensive experiments, we used Type C computing nodes equipped with 4 NVIDIA Tesla V100 32GB GPUs with NVLink and 768GB RAM.
 
 \subsubsection{Model Configurations}
 
-For each approach, we employed the following configurations:
+For each approach, we used following configurations:
 
 \begin{itemize}
-\item \textbf{BERT-based Approach}: We fine-tuned XLM-RoBERTa-large (550M parameters) with a classification head for multi-label prediction. The model was initialized with pre-trained weights and fine-tuned on our emotion detection task with a learning rate of 2e-5 and batch size of 16.
+\item \textbf{BERT-based Approach}: We fine-tuned XLM-RoBERTa-large (550M parameters) with classification head for multi-label prediction. Model was initialized with pre-trained weights and fine-tuned on our emotion detection task with learning rate of 2e-5 and batch size of 16.
 
-\item \textbf{SetFit Approach}: We used the multilingual MPNet base model as our sentence transformer backbone, with a multi-output classification strategy. For few-shot learning, we sampled 8 examples per emotion category, balanced across languages when possible.
+\item \textbf{SetFit Approach}: We used multilingual MPNet base model as our sentence transformer backbone, with multi-output classification strategy. For few-shot learning, we sampled 8 examples per emotion category, balanced across languages when possible.
 
-\item \textbf{Seq2Seq Approach}: We employed mT5-large (1.2B parameters) as our primary sequence-to-sequence model, fine-tuned with a learning rate of 5e-5 and a batch size of 8. We used a maximum sequence length of 512 tokens for both input and output.
+\item \textbf{Seq2Seq Approach}: We used mT5-large (1.2B parameters) as our main sequence-to-sequence model, fine-tuned with learning rate of 5e-5 and batch size of 8. We used maximum sequence length of 512 tokens for both input and output.
 
-\item \textbf{EmoRAG System}: Our retrieval component used the BGE-M3 embedding model for dense retrieval and n-gram retrieval, with K=30 for low-resource languages and K=100 for high-resource languages. The generator ensemble included Llama-3.1-70B, Qwen2.5-72B-Instruct, Gemma-2-27B-it, and GPT-4o-mini.
+\item \textbf{EmoRAG System}: Our retrieval component used BGE-M3 embedding model for dense retrieval and n-gram retrieval, with K=30 for low-resource languages and K=100 for high-resource languages. Generator ensemble included Llama-3.1-70B, Qwen2.5-72B-Instruct, Gemma-2-27B-it, and GPT-4o-mini.
 \end{itemize}
 
 \subsubsection{Training Process}
 
-For the supervised approaches (BERT, SetFit, and Seq2Seq), we trained models for 10 epochs with early stopping based on validation loss. The BERT and Seq2Seq models were trained using AdamW optimizer with a linear learning rate scheduler and 10\% warmup steps. 
-For SetFit, we used a two-stage training process: contrastive learning followed by classifier training.
+Supervised models (BERT, SetFit, Seq2Seq) were trained for 10 epochs with early stopping based on validation loss. BERT and Seq2Seq used the AdamW optimizer, linear learning rate scheduler, and 10\% warmup. SetFit involved contrastive learning and classifier training. EmoRAG required no training, leveraging pre-trained models and retrieval. Training times ranged from 2 hours (SetFit) to 24 hours (Seq2Seq) on the HPC cluster using Slurm.
 
-The EmoRAG system required no training in the traditional sense, as it leverages pre-trained models and retrieval mechanisms. 
-
-All training runs were managed using the Slurm workload manager on the HPC cluster, with typical training times ranging from 2 hours for SetFit to 24 hours for the Seq2Seq approach on the full dataset.
-
-For the English-only experiments, we used validation set for evaluation of different approaches.
-
-Then, for EmoRAG system we provide evaluation both on the validation and test sets.
+For English experiments, we evaluated on the validation set, while EmoRAG was assessed on both validation and test sets.
 
 \subsection{Evaluation Metrics}
 
-Our primary evaluation metrics were F1-micro and F1-macro scores, which are particularly suitable for multi-label classification tasks:
+We used F1-micro and F1-macro for multi-label classification:
 
-\textbf{F1-micro} calculates metrics globally by counting the total true positives, false negatives, and false positives across all instances. This metric gives equal weight to each sample and is therefore influenced more by common labels and high-resource languages.
+F1-micro is calculated by considering all true positives, false positives, and false negatives globally, providing a balance for common labels and high-resource languages.
 
-\textbf{F1-macro} calculates metrics for each label separately and then takes the unweighted mean. This gives equal importance to each label regardless of its frequency, making it more suitable for evaluating performance on imbalanced datasets.
+F1-macro is determined by averaging the F1 scores for each label, making it suitable for datasets with imbalanced label distributions.
 
 \section{Results}
 
 \subsection{English Language}
 
-Our experiments revealed significant performance differences across the various approaches to emotion detection. Table \ref{tab:english_comparison} presents a comprehensive comparison of all methods on the English subset of the BRIGHTER dataset.
+Table \ref{tab:english_comparison} presents a comprehensive comparison of all methods on the English subset of the BRIGHTER dataset.
 
 \begin{table}[h]
 \centering
@@ -428,31 +418,31 @@ EmoRAG (majority vote macro) & 0.8130 & 0.8100 \\
 EmoRAG (label-specific F1) & \textbf{0.8210} & \textbf{0.8180} \\
 \bottomrule
 \end{tabular}
-\caption{Performance comparison of different approaches on English language subset of the validation set}
+\caption{Performance comparison of different approaches on English language subset of validation set}
 \label{tab:english_comparison}
 \end{table}
 
-The EmoRAG system with label-specific F1 weighting achieved the highest performance, with an F1-micro score of 0.821 and F1-macro score of 0.818, significantly outperforming all other approaches. Among the traditional supervised methods, BERT performed best with F1-micro of 0.7145, followed by SetFit at 0.6943. The Seq2Seq approach showed the weakest performance among supervised methods, with an F1-micro of only 0.5126.
+EmoRAG system with label-specific F1 weighting achieved the highest performance, with an F1 micro score of 0.821 and an F1 macro score of 0.818, significantly outperforming all other approaches. Among traditional supervised methods, BERT performed best with 0.7145 F1 micro, followed by SetFit at 0.6943. The Seq2Seq approach showed the weakest performance among the supervised methods, with an F1-micro of only 0.5126.
 
-Notably, all EmoRAG variants outperformed the supervised approaches, with even the single-model GPT-4o-mini achieving an F1-micro of 0.8071, demonstrating the effectiveness of retrieval-augmented generation for this task. The ensemble-based aggregation strategies further improved performance, with label-specific F1 weighting providing the best results.
+Notably, all EmoRAG variants outperformed supervised approaches, with even a single-model GPT-4o-mini achieving an F1-micro of 0.8071, demonstrating the effectiveness of retrieval-augmented generation for this task. Ensemble-based aggregation strategies further improved performance, with label-specific F1 weighting yielding the best results.
 
-In terms of efficiency, the supervised approaches required substantial training time (24 hours for Seq2Seq, 8 hours for BERT, and 2 hours for SetFit on our hardware), while EmoRAG required no training but had higher inference costs due to the multiple LLM calls. The average inference time per sample was 0.05 seconds for BERT, 0.12 seconds for SetFit, 0.3 seconds for Seq2Seq, and 2.5 seconds for EmoRAG with four models.
+Regarding efficiency, supervised approaches required extensive training time (24 hours for Seq2Seq, 8 hours for BERT, and 2 hours for SetFit on our hardware), while EmoRAG did not require training but incurred higher inference costs due to multiple LLM calls. The average inference time per sample was 0.05 seconds for BERT, 0.12 seconds for SetFit, 0.3 seconds for Seq2Seq, and 2.5 seconds for EmoRAG with four models.
 
 \subsection{All Languages}
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=1\textwidth]{emorag_by_language.png}
-    \caption{EmoRAG performance across all 28 languages in the BRIGHTER dataset}
+    \caption{EmoRAG performance across all 28 languages in BRIGHTER dataset}
     \label{fig:emorag_by_language}
 \end{figure}
 
 
-Table \ref{tab:multilingual_performance} presents the performance of our best EmoRAG system across all 28 languages in the BRIGHTER dataset on the validation set, showing F1-micro/F1-macro scores for each language and aggregation method.
+Table \ref{tab:multilingual_performance} presents the performance of our best EmoRAG system in all 28 languages in the BRIGHTER dataset in the validation set, showing F1-micro/F1-macro scores for each language and the aggregation method.
 
-Table \ref{tab:test_metrics} presents the performance of our best EmoRAG system across all 28 languages in the BRIGHTER dataset on the test set, showing F1-micro/F1-macro scores for each language and aggregation method.
+Table \ref{tab:test_metrics} presents the performance of our best EmoRAG system in all 28 languages in the BRIGHTER dataset in the test set, showing F1-micro/F1-macro scores for each language and the aggregation method.
 
-Figure \ref{fig:emorag_by_language} shows the performance of our best EmoRAG system across all 28 languages in the BRIGHTER dataset on the validation set, showing F1-micro/F1-macro scores for the best performing model for each language.
+Figure \ref{fig:emorag_by_language} shows performance of our best EmoRAG system across all 28 languages in BRIGHTER dataset on validation set, showing F1-micro/F1-macro scores for best performing model for each language.
 
 \begin{table*}[!th]
 \begin{center}
@@ -543,17 +533,13 @@ Romanian & ron & majority\_vote\_by\_label\_f1 & 0.794 & 0.774 & 0.773 & 0.7608 
 \end{table*}
 
 
-Our analysis revealed several important patterns:
+We have identified several key patterns in the performance of EmoRAG.
 
-\begin{itemize}
-\item \textbf{High-resource vs. Low-resource Languages}: High-resource languages like English (0.821/0.818), Russian (0.880/0.880), and Hindi (0.842/0.849) consistently achieved the highest performance across all approaches. Low-resource languages like Tigrinya (0.397/0.342), Swahili (0.440/0.409), and Makhuwa (0.257/0.205) showed significantly lower performance, with F1 scores often below 0.5.
-
-\item \textbf{Language Family Analysis}: We observed performance clusters within language families. Indo-European languages (English, German, Spanish, Romanian) consistently performed well, with an average F1-micro of 0.795. Niger-Congo languages (Yoruba, Igbo, Swahili) showed more variable performance, with an average F1-micro of 0.563. Afro-Asiatic languages (Amharic, Tigrinya) generally performed below average, with F1-micro scores around 0.526.
-
-\item \textbf{Retrieval Strategy Impact}: For some languages, particularly those with unique scripts or limited representation in pre-training data, n-gram retrieval outperformed embedding-based retrieval. This was evident in Oromo (0.607 vs. 0.552), Moroccan Arabic (0.576 vs. 0.552), and Chinese (0.748 vs. 0.698).
-
-\item \textbf{Aggregation Strategy Effectiveness}: The label-specific F1 weighting strategy proved most effective overall, outperforming other aggregation methods in 17 out of 28 languages. This suggests that emotion-specific expertise varies across models and languages, and weighting predictions accordingly yields better results.
-\end{itemize}
+High-resource languages such as English, Russian, and Hindi consistently achieved superior results, with F1-micro scores above 0.8. 
+Low-resource languages like Tigrinya, Swahili, and Makhuwa exhibited significantly lower performance, with F1-micro scores below 0.5.
+Indo-European languages generally performed above average, with F1-micro scores around 0.795. 
+Niger-Congo  and Afro-Asiatic languages generally performed below average, with F1-micro scores around 0.563. 
+The retrieval strategy also impacted performance; n-gram retrieval was more effective than embedding-based retrieval for languages with unique scripts or limited pre-training data representation, as seen in Oromo, Moroccan Arabic, and Chinese. Furthermore, the label-specific F1 weighting strategy was the most effective aggregation method, outperforming others in 17 out of 28 languages, indicating that emotion-specific expertise varies across models and languages.
 
 
 \section{Ablation Studies}
@@ -579,7 +565,7 @@ Single model (GPT-4o-mini) & 0.631 & 0.590 \\
 \label{tab:ablation_components}
 \end{table}
 
-Removing the embedding-based retriever reduced performance by 5.5\% on average, with larger impacts on high-resource languages. Removing the n-gram retriever had a smaller overall impact (6.9\% reduction) but significantly affected low-resource languages with unique scripts. The label-specific weighting strategy contributed a 2.6\% improvement over simple majority voting, with larger gains in languages with imbalanced emotion distributions.
+Removing the embedding-based retriever led to a 5.5\% drop in performance on average, affecting high-resource languages more severely. Removing the n-gram retriever caused a smaller drop of 6.9\%, but it had a significant impact on low-resource languages with unique scripts. Using label-specific weighting improved results by 2.6\% compared to simple majority voting, especially in languages where emotion distribution is uneven.
 
 \subsection{Example Count Analysis}
 
@@ -590,7 +576,7 @@ Removing the embedding-based retriever reduced performance by 5.5\% on average, 
 %     \label{fig:example_count}
 % \end{figure}
 
-We varied the number of retrieved examples (K) from 0 to 1000 and found that performance generally improved with more examples up to a point, after which returns diminished or performance decreased. The optimal K varied by language: high-resource languages benefited from larger K values (100-150), while low-resource languages performed best with moderate K values (30-50). This suggests that quality of examples matters more than quantity for low-resource settings.
+We varied the number of retrieved examples (K) from 0 to 1000 and found that performance generally improved with more examples up to a point, after which returns diminished or performance decreased. The optimal K varied by language: high-resource languages benefited from larger K values (100-150), while low-resource languages performed best with moderate K values (30-50). This suggests that the quality of examples matters more than quantity for low-resource settings.
 
 \begin{table}[h]
 \centering
@@ -609,7 +595,7 @@ We varied the number of retrieved examples (K) from 0 to 1000 and found that per
 \label{tab:example_count}
 \end{table}
 
-As shown in Table \ref{tab:example_count}, for English, performance improves dramatically when moving from zero-shot to few-shot with 30 examples, with a slight additional improvement at 100 examples. However, increasing to 300 or 1000 examples actually leads to decreased performance. This pattern suggests that there is an optimal window for the number of retrieved examples, beyond which the model may become overwhelmed with potentially conflicting information or less relevant examples.
+As shown in Table \ref{tab:example_count}, for English, performance improves dramatically when moving from zero-shot to few-shot with 30 examples, with a slight additional improvement at 100 examples. However, increasing to 300 or 1000 examples actually leads to decreased performance. This pattern suggests that there is an optimal window for the number of retrieved examples.
 
 \subsection{Cross-model Analysis}
 
@@ -630,39 +616,42 @@ All models (ensemble) & 0.678 & 0.634 \\
 \label{tab:cross_model}
 \end{table}
 
-Each model in our ensemble showed different strengths across languages and emotions. Llama-3.1-70B performed best on Germanic and Romance languages, while Qwen2.5-72B excelled on Asian languages. GPT-4o-mini showed more balanced performance across the board. Gemma-2-27B, despite its smaller size, contributed valuable predictions for specific emotion-language combinations, particularly for surprise and fear in Slavic languages.
+Each model within our ensemble demonstrated distinct strengths across various languages and emotional categories. 
+The Llama-3.1-70B model showed outstanding performance in Germanic and Romance languages. 
+In contrast, the Qwen2.5-72B model was particularly effective in Asian languages. 
+The GPT-4o-mini model delivered more consistent performance across all language categories. 
+Gemma-2-27B was especially effective in predicting emotions like surprise and fear within Slavic languages.
 
-The ensemble consistently outperformed individual models, with an average improvement of 3.2\% in F1-micro score over the best single model. This confirms the complementary nature of different LLMs' knowledge and the effectiveness of our aggregation strategies in leveraging their combined strengths.
+The ensemble consistently outperformed individual models, with an average improvement of 3.2\% in F1-micro score over the best single model. 
+This confirms the complementary nature of different LLMs' knowledge.
 
 \section{Discussion}
 
-Our evaluation of different approaches to multilingual, multi-label emotion detection reveals several important insights about the strengths, limitations, and practical considerations of each method.
+Our experiments on multi-lingual, multi-label emotion detection reveal key insights into each method's strengths and weaknesses, with broader implications for cross-language emotion detection.
 
-\subsection{Comparison of Approaches}
+\subsection{Comparative Analysis of Approaches}
 
-The experimental results demonstrate clear performance differences between traditional supervised approaches and our retrieval-augmented generation system. Each approach offers distinct advantages and limitations:
+Retrieval-augmented generation methods outperform traditional supervised learning. EmoRAG consistently surpasses BERT, SetFit, and Seq2Seq models, especially in low-resource languages.
 
-\textbf{BERT-based Approach:} While providing a strong baseline (F1-micro of 0.7145 on English), this approach requires substantial labeled data for each language and emotion category. Its performance degrades significantly for low-resource languages where pre-training data is limited. The main advantage is its inference efficiency (0.05 seconds per sample), making it suitable for real-time applications with deployment constraints.
+\textbf{BERT-based Approach}: BERT provides a strong baseline (F1-micro of 0.7145 on English) but struggles with low-resource languages due to limited pre-training data. Its binary relevance method may not capture emotion label connections, and extensive fine-tuning is data-intensive.
 
-\textbf{SetFit Approach:} This few-shot learning technique (F1-micro of 0.6943 on English) offers a good balance between data efficiency and performance. It requires less training data than BERT but still needs some labeled examples for each language. SetFit's contrastive learning stage helps capture semantic relationships between texts expressing similar emotions, but it struggles with the multi-label aspect of emotion detection.
+\textbf{SetFit Approach}: SetFit (F1-micro of 0.6943 on English) is promising for few-shot learning but lags behind EmoRAG. Its two-stage training uses limited data well, but contrastive learning may miss emotional nuances. It is efficient when resources are scarce.
 
-\textbf{Seq2Seq Approach:} Despite its theoretical appeal for handling label dependencies, this approach showed the weakest performance among supervised methods (F1-micro of 0.5126 on English). The generative framing of emotion detection appears less effective than discriminative approaches, possibly due to the challenge of generating precise combinations of emotion labels.
+\textbf{Seq2Seq Approach}: Seq2Seq, despite its potential for label dependency, performs weakest (F1-micro of 0.5126 on English). Treating emotion detection as a generation task adds complexity without clear benefits, especially for texts with multiple emotions.
 
-\textbf{EmoRAG System:} Our novel retrieval-augmented approach achieved the highest performance across languages (F1-micro of 0.821 on English, 0.678 average across all languages). Its key strength is adaptability to new languages without requiring model retraining, making it particularly valuable for low-resource scenarios. 
-The main drawback is higher inference cost due to multiple LLM calls (2.5 seconds per sample with four models).
-However, experiments show that using a single model (for example, gpt-4o-mini) is still better than any other experimented supervised approach.
+\textbf{EmoRAG System}: EmoRAG excels (F1-micro of 0.8210 on English) by leveraging training data at inference without extensive fine-tuning. Powerful LLMs enable contextual emotion reasoning, and ensemble label-specific weighting combines model strengths.
 
-\subsection{Performance on Low-resource Languages}
+\subsection{Cross-lingual Performance}
 
-Our results highlight persistent challenges in emotion detection for low-resource languages. The performance disparity between high-resource languages like English (F1-micro of 0.821) and low-resource languages like Makhuwa (F1-micro of 0.257) remains substantial.
+EmoRAG's performance across 28 languages shows:
 
-Several factors contribute to these challenges:
+\textbf{High-resource vs. Low-resource Languages}: EmoRAG performs better on high-resource languages (e.g., English, German, Spanish) with a smaller performance gap than supervised methods. It achieves competitive results in some low-resource languages (e.g., Amharic, Algerian Arabic), indicating effective cross-language knowledge transfer.
 
-\textbf{Script and Tokenization Issues:} Languages with unique scripts or limited representation in pre-training data face tokenization challenges that affect model performance. This explains why n-gram retrieval outperformed embedding-based retrieval for languages like Oromo, Moroccan Arabic, and Chinese.
+\textbf{Script and Typological Factors}: Non-Latin script languages (e.g., Arabic, Amharic, Hindi) show lower performance than Latin scripts, but the gap is less than with supervised methods, suggesting EmoRAG's retrieval can bridge typological differences.
 
-\textbf{Cultural Expression of Emotions:} Emotions are expressed differently across cultures, and these nuances may not be well-captured in models primarily trained on high-resource languages. The ablation studies showed that increasing the number of retrieved examples beyond a certain point (30-50 for low-resource languages) actually decreased performance, suggesting that quality and relevance of examples matter more than quantity.
+\textbf{Retrieval Strategy Impact}: Embedding-based retrieval outperforms n-gram retrieval in high-resource languages. In some low-resource languages with limited embedding model pre-training data, n-gram retrieval is more effective, highlighting the need for language-specific retrieval strategies.
 
-\subsection{Error Analysis with Examples}
+\subsection{Examples of emotion intensity confusion}
 
 Analysis of misclassifications reveals several common error patterns across approaches, which can be illustrated through specific examples from our evaluation dataset:
 
@@ -750,26 +739,26 @@ These examples highlight the challenges in processing languages with different s
 
 \section{Conclusions}
 
-This thesis has investigated various approaches for multilingual, multi-label emotion detection, with a particular focus on addressing the challenges of low-resource languages. We compared traditional supervised approaches (BERT, SetFit, and Seq2Seq) with a novel retrieval-augmented generation system (EmoRAG). We have evaluated our system on 28 languages from the BRIGHTER dataset.
+This thesis has investigated various approaches for multilingual, multi-label emotion detection, with particular focus on addressing challenges of low-resource languages. We compared traditional supervised approaches (BERT, SetFit, and Seq2Seq) with a novel retrieval-augmented generation system (EmoRAG). We have evaluated our system on 28 languages from the BRIGHTER dataset.
 
 \subsection{Summary of Findings}
 
 Our research has yielded several key findings:
 
 \begin{itemize}
-    \item Retrieval-augmented generation significantly outperforms traditional supervised approaches for emotion detection on English.
+    \item Retrieval-augmented generation significantly performs better than traditional supervised approaches for emotion detection on English.
     
-    \item The performance gap between high-resource and low-resource languages still remains substantial.
+    \item Performance gap between high-resource and low-resource languages still remains substantial.
     
     \item Different retrieval strategies are optimal for different languages: embedding-based retrieval works best for high-resource languages with substantial pre-training data, while n-gram retrieval often performs better for languages with unique scripts or limited representation in pre-training.
     
-    \item Ensemble methods that combine predictions from multiple models with label-specific weighting strategies consistently outperformed single-model approaches, demonstrating the complementary nature of different LLMs' capabilities across languages and emotions.
+    \item Ensemble methods that combine predictions from multiple models with label-specific weighting strategies consistently performed better than single-model approaches, demonstrating complementary nature of different LLMs' capabilities across languages and emotions.
     
 \end{itemize}
 
 \subsection{Limitations}
 
-Despite the promising results, our approaches face several limitations:
+Despite promising results, our approaches face several limitations:
 
 \begin{itemize}
     \item Performance on Very Low-Resource Languages: Even with retrieval augmentation, performance on extremely low-resource languages like Makhuwa (F1-micro of 0.257) and Tigrinya (F1-micro of 0.397) remained poor, indicating that fundamental challenges in cross-lingual transfer persist.
@@ -785,9 +774,9 @@ In conclusion, while there are still challenges in detecting emotions across mul
 
 Our EmoRAG system participated in the SemEval2025-Task11 competition, ranking in the top 10 on average across all languages, with some languages achieving top 3 performance. 
 
-EmoRAG system description paper was accepted at the ACL Workshop 2025.
+The EmoRAG system description paper was accepted at ACL Workshop 2025.
 
-We have made our complete implementation publicly available at \url{https://github.com/galthran-wq/semeval25-text-emotions}. This repository includes code for all components of the EmoRAG system and the complete implementation of all approaches tested in this thesis.
+We have made our complete implementation publicly available at \url{https://github.com/galthran-wq/semeval25-text-emotions}. This repository includes code for all components of the EmoRAG system and complete implementation of all approaches tested in this thesis.
 
 \printbibliography
 
