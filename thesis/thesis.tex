@@ -29,6 +29,9 @@ maxbibnames=99
 \usepackage{tablefootnote}
 
 \usepackage{chngcntr} % нумерация графиков и таблиц по секциям
+\usepackage{tcolorbox}
+\usepackage{listings}
+
 \counterwithin{table}{section}
 \counterwithin{figure}{section}
 
@@ -336,17 +339,7 @@ The number of retrieved samples K is fixed per language type: 30 for low-resourc
 
 For generation, EmoRAG uses a diverse ensemble of LLMs including:
 \texttt{Llama-3.1-70B \cite{grattafiori2024llama3herdmodels}}, \texttt{Qwen2.5-72B-Instruct \cite{yang2024qwen2technicalreport}}, \texttt{Gemma-2-27B-it \cite{gemmateam2024gemma2improvingopen}}, \texttt{GPT-4o-mini \cite{openai2024gpt4omini}}
-Each LLM receives the same prompt structure, written in English and formatted to generate emotion predictions in JSON format:
-\begin{verbatim}
-{
-"anger": bool,
-"fear": bool,
-"joy": bool,
-"sadness": bool,
-"surprise": bool,
-"disgust": bool
-}
-\end{verbatim}
+Each LLM receives the same prompt structure, written in English and formatted to generate emotion predictions in JSON format, as detailed in Appendix~\ref{appendix:llm_prompt}.
 
 \subsubsection{Aggregation Strategies}
 
@@ -764,7 +757,7 @@ This thesis has investigated various approaches for multilingual, multi-label em
 Our research has yielded several key findings:
 
 \begin{itemize}
-    \item Retrieval-augmented generation significantly outperforms traditional supervised approaches for emotion detection on English, with our EmoRAG system achieving an average F1-micro score of 0.678 across all languages compared to 0.715 for the best supervised approach (BERT).
+    \item Retrieval-augmented generation significantly outperforms traditional supervised approaches for emotion detection on English.
     
     \item The performance gap between high-resource and low-resource languages still remains substantial.
     
@@ -800,52 +793,50 @@ We have made our complete implementation publicly available at \url{https://gith
 
 \appendix
 
+\section{LLM Prompt for Emotion Detection} 
+\label{appendix:llm_prompt}
 
-% \section{LLM Prompt for Emotion Detection} 
-% \label{appendix:llm_prompt}
+\lstset{
+  basicstyle=\small\ttfamily,
+  breaklines=true,
+  breakatwhitespace=false,
+  breakindent=0pt,
+  literate={-}{{-}}1
+}
 
-% \lstset{
-%   basicstyle=\small\ttfamily,
-%   breaklines=true,
-%   breakatwhitespace=false,
-%   breakindent=0pt,
-%   literate={-}{{-}}1, % ensures hyphens are treated properly
-% }
+The following prompt is used to instruct the language model for perceived emotion detection:
 
-% The following prompt is used to instruct the language model for perceived emotion detection:
-
-% \begin{tcolorbox}[
-%   colback=orange!5, 
-%   colframe=orange!90!black, 
-%   fonttitle=\bfseries, 
-%   title=Emotion Detection Prompt, 
-%   boxrule=1pt, 
-%   arc=4pt, 
-%   auto outer arc, 
-%   boxsep=5pt, 
-%   left=5pt, 
-%   right=5pt, 
-%   top=5pt, 
-%   bottom=5pt, 
-%   halign=justify,
-%   width=0.95\textwidth
-% ]
-% \begin{lstlisting}
-% You are an expert at detecting emotions in text. The texts are given in {language} language.
-% Please classify the text into one of the following categories:
-% Anger, Fear, Joy, Sadness, Surprise, Disgust
-% Your response should be a JSON object with the following format:
-% {
-%     "anger": bool,
-%     "fear": bool,
-%     "joy": bool,
-%     "sadness": bool,
-%     "surprise": bool,
-%     "disgust": bool
-% }
-% Do not give explanations. Just return the JSON object.
-% \end{lstlisting}
-% \end{tcolorbox}
-
+\begin{tcolorbox}[
+  colback=orange!5, 
+  colframe=orange!90!black, 
+  fonttitle=\bfseries, 
+  title=Emotion Detection Prompt, 
+  boxrule=1pt, 
+  arc=4pt, 
+  auto outer arc, 
+  boxsep=5pt, 
+  left=5pt, 
+  right=5pt, 
+  top=5pt, 
+  bottom=5pt, 
+  halign=justify,
+  width=0.95\textwidth
+]
+\begin{lstlisting}
+You are an expert at detecting emotions in text. The texts are given in {language} language.
+Please classify the text into one of the following categories:
+Anger, Fear, Joy, Sadness, Surprise, Disgust
+Your response should be a JSON object with the following format:
+{
+    "anger": bool,
+    "fear": bool,
+    "joy": bool,
+    "sadness": bool,
+    "surprise": bool,
+    "disgust": bool
+}
+Do not give explanations. Just return the JSON object.
+\end{lstlisting}
+\end{tcolorbox}
 
 \end{document}
